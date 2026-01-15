@@ -5,7 +5,7 @@ from starlette import status
 
 from app.models.asset_create import AssetCreate
 from app.models.assets import Asset
-from app.repositories.asset import add_asset
+from app.repositories.asset import add_or_update_asset
 from app.services.moex import get_ticker
 
 router = APIRouter(
@@ -31,7 +31,7 @@ async def create_asset(payload: AssetCreate):
     )
 
     try:
-        await add_asset(asset)
+        await add_or_update_asset(asset)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

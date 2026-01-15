@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.router import router as api_router
+from app.api.moex import router as api_moex_router
+from app.api.portfolio import router as api_portfolio_router
+
+from app.core.database import connect_to_mongo, close_mongo_connection
 
 app = FastAPI(title="Target Portfolio API", description="API")
 
@@ -19,7 +22,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router)
+app.include_router(api_moex_router)
+app.include_router(api_portfolio_router)
+
+
+@app.on_event("startup")
+async def startup():
+    await connect_to_mongo()
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    await close_mongo_connection()
 
 
 @app.get("/")
