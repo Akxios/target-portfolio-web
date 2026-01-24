@@ -1,10 +1,10 @@
+from app.models.portfolio_item import PortfolioItem
 from app.repositories.asset import get_all_assets
 from app.services.moex import get_ticker
 from app.services.portfolio import (
-    remaining_qty,
     progress_percent,
+    remaining_qty,
 )
-from app.models.portfolio_item import PortfolioItem
 
 
 async def build_portfolio() -> list[PortfolioItem]:
@@ -15,12 +15,12 @@ async def build_portfolio() -> list[PortfolioItem]:
     for asset in assets:
         quote = await get_ticker(asset.ticker)
 
-        price = quote["price"]
+        price = quote.last_price
 
         item = PortfolioItem(
             ticker=asset.ticker,
             price=price,
-            updated_at=quote.get("updated_at"),
+            updated_at=None,
             current_qty=asset.current_qty,
             target_qty=asset.target_qty,
             value=round(asset.current_qty * price, 2),

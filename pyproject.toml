@@ -12,6 +12,10 @@ dependencies = [
     "motor>=3.7.1",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
+    "pymoex",
     "pymongo>=4.16.0",
     "uvicorn>=0.40.0",
 ]
+
+[tool.uv.sources]
+pymoex = { git = "https://github.com/Akxios/pymoex.git" }
