@@ -1,18 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pymoex.exceptions import InstrumentNotFoundError
+from starlette.responses import JSONResponse
 
 from app.api.moex import router as api_moex_router
 from app.api.portfolio import router as api_portfolio_router
-
-from app.core.database import connect_to_mongo, close_mongo_connection
+from app.core.database import close_mongo_connection, connect_to_mongo
 
 app = FastAPI(title="Target Portfolio API", description="API")
 
-origins = [
-    "http://localhost",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000"
-]
+origins = ["http://localhost", "http://localhost:8000", "http://127.0.0.1:8000"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +21,14 @@ app.add_middleware(
 
 app.include_router(api_moex_router)
 app.include_router(api_portfolio_router)
+
+
+@app.exception_handler(InstrumentNotFoundError)
+async def instrument_not_found_handler(request, exc: InstrumentNotFoundError):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": str(exc)},
+    )
 
 
 @app.on_event("startup")
