@@ -11,13 +11,14 @@ from app.services.portfolio import (
 
 async def build_portfolio() -> list[PortfolioItem]:
     assets = await get_all_assets()
-
     result: list[PortfolioItem] = []
 
     for asset in assets:
         quote = await get_ticker(asset.ticker)
-
         price = quote.last_price
+
+        if price is None:
+            raise ValueError(f"Нет цены для тикера {asset.ticker}")
 
         item = PortfolioItem(
             ticker=asset.ticker,

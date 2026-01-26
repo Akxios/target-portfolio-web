@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class PortfolioItem(BaseModel):
     ticker: str
     price: float
-    updated_at: str | None
+    updated_at: str
 
     current_qty: int
     target_qty: int
