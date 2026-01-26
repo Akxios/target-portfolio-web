@@ -1,45 +1,23 @@
-from fastapi import APIRouter, HTTPException
-from pymoex import MoexClient
+from fastapi import APIRouter
 from pymoex.services.search import InstrumentType
-from starlette import status
 
-from app.models.asset_create import AssetCreate
-from app.models.assets import Asset
+from app.models.bond import BondOut
 from app.models.share import ShareOut
-from app.repositories.asset import add_or_update_asset
-from app.services.moex import search
+from app.services.moex import get_bond, get_share, search_instruments
 
 router = APIRouter(prefix="/api/moex", tags=["MOEX"])
 
 
 @router.get("/shares/{ticket}", response_model=ShareOut)
-async def get_share_data(ticket: str):
-    async with MoexClient() as client:
-        share = await client.share(ticket)
-
-        return ShareOut(
-            ticker=share.sec_id,
-            name=share.short_name,
-            price=share.last_price,
-        )
+async def get_share_data(ticker: str):
+    return await get_share(ticker)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
-async def create_asset(payload: AssetCreate):
-    asset = Asset(
-        ticker=payload.ticker.upper(),
-        target_qty=payload.target_qty,
-        current_qty=payload.current_qty,
-    )
-
-    try:
-        await add_or_update_asset(asset)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    return {"status": "ok", "ticker": asset.ticker}
+@router.get("/bonds/{ticket}", response_model=BondOut)
+async def get_bond_data(ticker: str):
+    return await get_bond(ticker)
 
 
 @router.get("/search")
 async def api_search(ticker: str, type: InstrumentType):
-    return await search(ticker, type)
+    return await search_instruments(ticker, type)
