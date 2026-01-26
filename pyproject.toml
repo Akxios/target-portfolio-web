@@ -18,4 +18,4 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-pymoex = { git = "https://github.com/Akxios/pymoex.git" }
+pymoex = { git = "ssh://git@github.com/Akxios/pymoex.git", rev = "dev" }
