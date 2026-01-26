@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from app.models.portfolio_item import PortfolioItem
 from app.repositories.asset import get_all_assets
 from app.services.moex import get_ticker
@@ -20,7 +22,7 @@ async def build_portfolio() -> list[PortfolioItem]:
         item = PortfolioItem(
             ticker=asset.ticker,
             price=price,
-            updated_at=None,
+            updated_at=str(datetime.now()),
             current_qty=asset.current_qty,
             target_qty=asset.target_qty,
             value=round(asset.current_qty * price, 2),
