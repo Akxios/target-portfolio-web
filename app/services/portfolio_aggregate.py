@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.models.portfolio_item import PortfolioItem
 from app.repositories.asset import get_all_assets
-from app.services.moex import get_ticker
+from app.services.moex import get_share
 from app.services.portfolio import (
     progress_percent,
     remaining_qty,
@@ -14,8 +14,8 @@ async def build_portfolio() -> list[PortfolioItem]:
     result: list[PortfolioItem] = []
 
     for asset in assets:
-        quote = await get_ticker(asset.ticker)
-        price = quote.last_price
+        quote = await get_share(asset.ticker)
+        price = quote.price
 
         if price is None:
             raise ValueError(f"Нет цены для тикера {asset.ticker}")

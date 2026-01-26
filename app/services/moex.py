@@ -2,18 +2,37 @@ from pymoex import MoexClient
 from pymoex.services.search import InstrumentType
 
 from app.core.config import settings
+from app.models.bond import BondOut
+from app.models.share import ShareOut
 
 moex_url = settings.MOEX_BASE_URL
 
 
-async def get_ticker(ticker: str):
+async def get_share(ticker: str) -> ShareOut:
     async with MoexClient() as client:
         share = await client.share(ticker)
-        print(share)
-        return share
+
+        return ShareOut(
+            ticker=share.sec_id,
+            name=share.short_name,
+            price=share.last_price,
+        )
 
 
-async def search(ticker: str, type: InstrumentType):
+async def get_bond(ticker: str) -> BondOut:
+    async with MoexClient() as client:
+        bond = await client.bond(ticker)
+
+        return BondOut(
+            ticker=bond.sec_id,
+            name=bond.short_name,
+            price=bond.last_price,
+            yield_percent=bond.yield_percent,
+            coupon_value=bond.coupon_value,
+        )
+
+
+async def search_instruments(ticker: str, type: InstrumentType):
     async with MoexClient() as client:
         result = await client.find(ticker, type)
 
