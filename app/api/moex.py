@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from pymoex import MoexClient
+from pymoex.services.search import InstrumentType
 from starlette import status
 
 from app.models.asset_create import AssetCreate
 from app.models.assets import Asset
 from app.models.share import ShareOut
 from app.repositories.asset import add_or_update_asset
-from app.services.moex import search_shares
+from app.services.moex import search
 
 router = APIRouter(prefix="/api/moex", tags=["MOEX"])
 
@@ -40,5 +41,5 @@ async def create_asset(payload: AssetCreate):
 
 
 @router.get("/search")
-async def search(query: str):
-    return await search_shares(query)
+async def api_search(ticker: str, type: InstrumentType):
+    return await search(ticker, type)
