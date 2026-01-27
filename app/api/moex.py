@@ -19,5 +19,5 @@ async def get_bond_data(ticker: str):
 
 
 @router.get("/search")
-async def api_search(ticker: str, type: InstrumentType):
+async def search(ticker: str, type: InstrumentType):
     return await search_instruments(ticker, type)
