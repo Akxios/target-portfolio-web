@@ -1,8 +1,10 @@
 from datetime import datetime
 
+from pymoex.services.search import InstrumentType
+
 from app.models.portfolio_item import PortfolioItem
 from app.repositories.asset import get_all_assets
-from app.services.moex import get_share
+from app.services.moex import get_bond, get_share
 from app.services.portfolio import (
     progress_percent,
     remaining_qty,
@@ -14,7 +16,13 @@ async def build_portfolio() -> list[PortfolioItem]:
     result: list[PortfolioItem] = []
 
     for asset in assets:
-        quote = await get_share(asset.ticker)
+        if asset.type == InstrumentType.SHARE:
+            quote = await get_share(asset.ticker)
+        elif asset.type == InstrumentType.BOND:
+            quote = await get_bond(asset.ticker)
+        else:
+            raise ValueError(f"Неизвестный тип инструмента {asset.type}")
+
         price = quote.price
 
         if price is None:
@@ -22,6 +30,7 @@ async def build_portfolio() -> list[PortfolioItem]:
 
         item = PortfolioItem(
             ticker=asset.ticker,
+            type=asset.type,
             price=price,
             updated_at=str(datetime.now()),
             current_qty=asset.current_qty,
