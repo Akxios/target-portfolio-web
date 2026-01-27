@@ -14,7 +14,7 @@ router = APIRouter(prefix="/portfolio", tags=["Portfolio"])
 
 
 @router.get("", response_model=list[PortfolioItem])
-async def get_portfolio():
+async def api_get_portfolio():
     return await build_portfolio()
 
 
