@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class PortfolioItem(BaseModel):
     ticker: str
+    type: str
     price: float
     updated_at: str
 
