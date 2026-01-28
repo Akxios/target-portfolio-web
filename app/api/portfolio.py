@@ -1,16 +1,18 @@
 from fastapi import APIRouter, HTTPException
-from pymoex.services.search import InstrumentType
 from starlette import status
 
 from app.exceptions import AssetNotFoundError, InvalidQuantityError
-from app.models.asset_create import AssetCreate
-from app.models.assets import Asset
 from app.models.portfolio_item import PortfolioItem
-from app.repositories.asset import add_or_update_asset
-from app.services.portfolio import change_current, change_target, remove_asset
+from app.models.position import Position, PositionCreate
+from app.services.portfolio import (
+    add_position_service,
+    remove_position_service,
+    set_position_current,
+    set_position_target,
+)
 from app.services.portfolio_aggregate import build_portfolio
 
-router = APIRouter(prefix="/portfolio", tags=["Portfolio"])
+router = APIRouter(prefix="/api/portfolio", tags=["Portfolio"])
 
 
 @router.get("", response_model=list[PortfolioItem])
@@ -18,32 +20,32 @@ async def api_get_portfolio():
     return await build_portfolio()
 
 
-@router.post("/add_assets", status_code=status.HTTP_201_CREATED)
-async def api_add_assets(payload: AssetCreate):
-    asset = Asset(
-        ticker=payload.ticker.upper(),
+@router.post("/positions", status_code=status.HTTP_201_CREATED)
+async def api_add_position(payload: PositionCreate):
+    position = Position(
+        ticker=payload.ticker,
         type=payload.type,
         target_qty=payload.target_qty,
         current_qty=payload.current_qty,
     )
 
-    await add_or_update_asset(asset)
+    await add_position_service(position)
 
-    return {"status": "ok", "ticker": asset.ticker}
-
-
-@router.delete("/assets/{ticker}")
-async def api_remove_ticker(ticker: str):
-    try:
-        return await remove_asset(ticker)
-    except AssetNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return {
+        "status": "created",
+        "ticker": position.ticker.upper(),
+    }
 
 
 @router.patch("/assets/{ticker}/target")
-async def api_change_target(ticker: str, target_qty: int):
+async def api_set_target_qty(ticker: str, target_qty: int):
     try:
-        return await change_target(ticker, target_qty)
+        await set_position_target(ticker, target_qty)
+        return {
+            "status": "target_updated",
+            "ticker": ticker.upper(),
+            "target_qty": target_qty,
+        }
     except AssetNotFoundError as e:
         raise HTTPException(404, str(e))
     except InvalidQuantityError as e:
@@ -51,10 +53,27 @@ async def api_change_target(ticker: str, target_qty: int):
 
 
 @router.patch("/assets/{ticker}/current")
-async def api_update_current(ticker: str, current_qty: int):
+async def api_set_current_qty(ticker: str, current_qty: int):
     try:
-        return await change_current(ticker, current_qty)
+        await set_position_current(ticker, current_qty)
+        return {
+            "status": "current_updated",
+            "ticker": ticker.upper(),
+            "current_qty": current_qty,
+        }
     except AssetNotFoundError as e:
         raise HTTPException(404, str(e))
     except InvalidQuantityError as e:
         raise HTTPException(400, str(e))
+
+
+@router.delete("/assets/{ticker}")
+async def api_remove_position(ticker: str):
+    try:
+        await remove_position_service(ticker)
+        return {
+            "status": "deleted",
+            "ticker": ticker.upper(),
+        }
+    except AssetNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
