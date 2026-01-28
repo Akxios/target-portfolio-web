@@ -1,15 +1,20 @@
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+from app.models.position import InstrumentType
 
 
 class PortfolioItem(BaseModel):
-    ticker: str
-    type: str
-    price: float
-    updated_at: str
+    ticker: str = Field(..., examples=["SBER"])
+    type: InstrumentType
 
-    current_qty: int
-    target_qty: int
+    price: float = Field(..., description="Текущая цена")
+    updated_at: datetime = Field(..., description="Время обновления котировки")
 
-    value: float
-    progress_percent: float
-    remaining_qty: int
+    current_qty: int = Field(..., ge=0)
+    target_qty: int = Field(..., ge=0)
+
+    value: float = Field(..., description="Текущая стоимость позиции")
+    progress_percent: float = Field(..., ge=0, le=100)
+    remaining_qty: int = Field(..., ge=0)
