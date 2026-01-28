@@ -3,41 +3,36 @@ from datetime import datetime
 from pymoex.services.search import InstrumentType
 
 from app.models.portfolio_item import PortfolioItem
-from app.repositories.asset import get_all_assets
-from app.services.moex import get_bond, get_share
-from app.services.portfolio import (
-    progress_percent,
-    remaining_qty,
-)
+from app.repositories.portfolio import list_positions
+from app.services.moex import get_moex_bond, get_moex_share
+from app.services.portfolio import progress_percent, remaining_qty
 
 
 async def build_portfolio() -> list[PortfolioItem]:
-    assets = await get_all_assets()
+    positions = await list_positions()
     result: list[PortfolioItem] = []
 
-    for asset in assets:
-        if asset.type == InstrumentType.SHARE:
-            quote = await get_share(asset.ticker)
-        elif asset.type == InstrumentType.BOND:
-            quote = await get_bond(asset.ticker)
+    for position in positions:
+        if position.type == InstrumentType.SHARE:
+            quote = await get_moex_share(position.ticker)
+        elif position.type == InstrumentType.BOND:
+            quote = await get_moex_bond(position.ticker)
         else:
-            raise ValueError(f"Неизвестный тип инструмента {asset.type}")
+            raise ValueError(f"Неизвестный тип инструмента {position.type}")
 
-        price = quote.price
-
-        if price is None:
-            raise ValueError(f"Нет цены для тикера {asset.ticker}")
+        if quote.price is None:
+            raise ValueError(f"Нет цены для тикера {position.ticker}")
 
         item = PortfolioItem(
-            ticker=asset.ticker,
-            type=asset.type,
-            price=price,
-            updated_at=str(datetime.now()),
-            current_qty=asset.current_qty,
-            target_qty=asset.target_qty,
-            value=round(asset.current_qty * price, 2),
-            progress_percent=progress_percent(asset),
-            remaining_qty=remaining_qty(asset),
+            ticker=position.ticker,
+            type=position.type,
+            price=quote.price,
+            updated_at=datetime.utcnow(),
+            current_qty=position.current_qty,
+            target_qty=position.target_qty,
+            value=round(position.current_qty * quote.price, 2),
+            progress_percent=progress_percent(position),
+            remaining_qty=remaining_qty(position),
         )
 
         result.append(item)
