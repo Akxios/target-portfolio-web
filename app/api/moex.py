@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from pymoex.services.search import InstrumentType
+from pymoex.models.enums import InstrumentType
 
 from app.services.moex import get_moex_bond, get_moex_share, search_moex_instruments
 
