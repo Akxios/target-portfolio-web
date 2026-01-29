@@ -3,7 +3,7 @@ from pymoex.models.enums import InstrumentType
 
 from app.services.moex import get_moex_bond, get_moex_share, search_moex_instruments
 
-router = APIRouter(prefix="/api/moex", tags=["MOEX"])
+router = APIRouter(prefix="/moex", tags=["MOEX"])
 
 
 @router.get("/instruments/{ticker}")

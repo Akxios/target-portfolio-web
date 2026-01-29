@@ -12,7 +12,7 @@ from app.services.portfolio import (
 )
 from app.services.portfolio_aggregate import build_portfolio
 
-router = APIRouter(prefix="/api/portfolio", tags=["Portfolio"])
+router = APIRouter(prefix="/portfolio", tags=["Portfolio"])
 
 
 @router.get("", response_model=list[PortfolioItem])
