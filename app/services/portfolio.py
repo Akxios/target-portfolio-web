@@ -17,7 +17,8 @@ def progress_percent(position: Position) -> float:
     """Процент выполнения цели"""
     if position.target_qty == 0:
         return 0.0
-    return round(position.current_qty / position.target_qty * 100, 2)
+    percent = position.current_qty / position.target_qty * 100
+    return round(min(percent, 100.0), 2)
 
 
 def is_target_reached(position: Position) -> bool:
