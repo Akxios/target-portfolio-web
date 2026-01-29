@@ -1,0 +1,194 @@
+body {
+    margin: 0;
+    background: #f7f5ff;
+    font-family: Inter, system-ui, sans-serif;
+    color: #2b1d4f;
+}
+
+.app {
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 28px;
+    color: #5b3fdc;
+}
+
+.card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 6px 24px rgba(91, 63, 220, 0.08);
+}
+
+h2 {
+    margin-top: 0;
+    color: #5b3fdc;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    color: #7b61ff;
+    font-weight: 600;
+}
+
+input,
+select {
+    background: #f2efff;
+    border: 1px solid #d6ceff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #2b1d4f;
+}
+
+.btn {
+    background: #7b61ff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn:hover {
+    background: #6a4cff;
+}
+
+.btn.success {
+    background: #4caf50;
+}
+
+.btn.primary {
+    background: #7b61ff;
+}
+
+.btn.danger {
+    background: #e74c3c;
+}
+
+.btn.small {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.progress {
+    background: #ebe7ff;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 10px;
+}
+
+.bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7b61ff, #b7a9ff);
+}
+
+.form {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.edit-panel {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    width: 380px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    border-top: 4px solid #7b61ff;
+    animation: scaleIn 0.2s ease;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.edit-panel h3 {
+    margin-top: 0;
+    color: #5b3fdc;
+}
+
+.field {
+    margin-bottom: 15px;
+}
+
+.field label {
+    display: block;
+    font-size: 13px;
+    color: #6b5bbd;
+    margin-bottom: 4px;
+}
+
+.field input,
+.field select {
+    width: 100%;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+.portfolio-table tbody tr {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.portfolio-table tbody tr:hover {
+    background: #f1ecff;
+}
+
+.menu-cell {
+    color: #7b61ff;
+    font-size: 18px;
+    font-weight: bold;
+    width: 24px;
+    text-align: center;
+}

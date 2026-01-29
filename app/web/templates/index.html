@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8" />
+        <title>Target Portfolio</title>
+        <link rel="stylesheet" href="/static/css/style.css" />
+    </head>
+    <body>
+        <div class="app">
+            <header class="header">
+                <h1>Target Portfolio</h1>
+                <div class="actions">
+                    <button class="btn primary" id="refresh-btn">
+                        Обновить цены
+                    </button>
+                    <button class="btn success" id="add-btn">
+                        Добавить актив
+                    </button>
+                </div>
+            </header>
+
+            <section class="card">
+                <h2>Портфель</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Тикер</th>
+                            <th>Тип</th>
+                            <th>Цена</th>
+                            <th>Текущее</th>
+                            <th>Цель</th>
+                            <th>Стоимость</th>
+                            <th>Прогресс</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolio-body"></tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- Модалка просмотра / редактирования -->
+        <div class="modal-overlay hidden" id="edit-overlay">
+            <div class="edit-panel">
+                <h3>Актив</h3>
+
+                <div class="field">
+                    <label>Тикер</label>
+                    <input type="text" id="edit-ticker" disabled />
+                </div>
+
+                <div class="field">
+                    <label>Тип</label>
+                    <input type="text" id="edit-type" disabled />
+                </div>
+
+                <div class="field">
+                    <label>Текущее количество</label>
+                    <input type="number" id="edit-current" min="0" />
+                </div>
+
+                <div class="field">
+                    <label>Цель</label>
+                    <input type="number" id="edit-target" min="0" />
+                </div>
+
+                <div class="panel-actions">
+                    <button class="btn primary">Сохранить</button>
+                    <button class="btn danger">Удалить</button>
+                    <button class="btn" id="close-edit">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка добавления -->
+        <div class="modal-overlay hidden" id="add-overlay">
+            <div class="edit-panel">
+                <h3>Добавить актив</h3>
+
+                <div class="field">
+                    <label>Тикер</label>
+                    <input type="text" id="add-ticker" placeholder="SBER" />
+                </div>
+
+                <div class="field">
+                    <label>Тип</label>
+                    <select id="add-type">
+                        <option value="share">Акция</option>
+                        <option value="bond">Облигация</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Текущее количество</label>
+                    <input type="number" id="add-current" min="0" />
+                </div>
+
+                <div class="field">
+                    <label>Цель</label>
+                    <input type="number" id="add-target" min="0" />
+                </div>
+
+                <div class="panel-actions">
+                    <button class="btn success">Добавить</button>
+                    <button class="btn" id="close-add">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="/static/js/scripts.js"></script>
+    </body>
+</html>
