@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pymoex.services.search import InstrumentType
+from pymoex.models.enums import InstrumentType
 
 from app.models.portfolio_item import PortfolioItem
 from app.repositories.portfolio import list_positions

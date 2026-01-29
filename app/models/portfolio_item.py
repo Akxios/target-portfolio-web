@@ -1,8 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-
-from app.models.position import InstrumentType
+from pymoex.models.enums import InstrumentType
 
 
 class PortfolioItem(BaseModel):

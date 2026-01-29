@@ -1,5 +1,5 @@
 from pymoex import MoexClient
-from pymoex.services.search import InstrumentType
+from pymoex.models.enums import InstrumentType
 
 from app.core.config import settings
 from app.models.bond import MoexBondOut

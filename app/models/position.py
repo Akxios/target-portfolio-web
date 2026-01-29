@@ -1,11 +1,5 @@
-from enum import Enum
-
 from pydantic import BaseModel, Field
-
-
-class InstrumentType(str, Enum):
-    share = "share"
-    bond = "bond"
+from pymoex.models.enums import InstrumentType
 
 
 class Position(BaseModel):
