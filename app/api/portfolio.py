@@ -1,9 +1,11 @@
 from fastapi import APIRouter, HTTPException
+from pymoex.models.enums import InstrumentType
 from starlette import status
 
 from app.exceptions import AssetNotFoundError, InvalidQuantityError
 from app.models.portfolio_item import PortfolioItem
 from app.models.position import Position, PositionCreate
+from app.services.moex import get_moex_bond, get_moex_share
 from app.services.portfolio import (
     add_position_service,
     remove_position_service,
@@ -22,8 +24,20 @@ async def api_get_portfolio():
 
 @router.post("/positions", status_code=status.HTTP_201_CREATED)
 async def api_add_position(payload: PositionCreate):
+    ticker = payload.ticker.upper()
+
+    if payload.type == InstrumentType.SHARE:
+        instrument = await get_moex_share(ticker)
+    elif payload.type == InstrumentType.BOND:
+        instrument = await get_moex_bond(ticker)
+    else:
+        raise HTTPException(400, "Invalid instrument type")
+
+    if not instrument:
+        raise HTTPException(404, "Instrument not found on MOEX")
+
     position = Position(
-        ticker=payload.ticker,
+        ticker=ticker,
         type=payload.type,
         target_qty=payload.target_qty,
         current_qty=payload.current_qty,
@@ -33,7 +47,7 @@ async def api_add_position(payload: PositionCreate):
 
     return {
         "status": "created",
-        "ticker": position.ticker.upper(),
+        "ticker": ticker,
     }
 
 
