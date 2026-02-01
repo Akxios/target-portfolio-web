@@ -32,7 +32,6 @@ async def _load_quote(position):
 async def build_portfolio() -> list[PortfolioItem]:
     positions = await list_positions()
 
-    # ⏱ одна временная метка на всю сборку
     now = datetime.utcnow()
 
     tasks = [_load_quote(p) for p in positions]
