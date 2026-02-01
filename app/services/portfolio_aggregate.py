@@ -4,12 +4,13 @@ from datetime import datetime
 import httpx
 from pymoex.models.enums import InstrumentType
 
+from app.core.constants import MOEX_MAX_CONCURRENCY
 from app.models.portfolio_item import PortfolioItem
 from app.repositories.portfolio import list_positions
 from app.services.moex import get_moex_bond, get_moex_share
 from app.services.portfolio import progress_percent, remaining_qty
 
-_SEMAPHORE = asyncio.Semaphore(5)
+_SEMAPHORE = asyncio.Semaphore(MOEX_MAX_CONCURRENCY)
 
 
 async def _load_quote(position):
