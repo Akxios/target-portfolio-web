@@ -1,5 +1,7 @@
+import asyncio
 from datetime import datetime
 
+import httpx
 from pymoex.models.enums import InstrumentType
 
 from app.models.portfolio_item import PortfolioItem
@@ -7,34 +9,51 @@ from app.repositories.portfolio import list_positions
 from app.services.moex import get_moex_bond, get_moex_share
 from app.services.portfolio import progress_percent, remaining_qty
 
+_SEMAPHORE = asyncio.Semaphore(5)
+
+
+async def _load_quote(position):
+    async with _SEMAPHORE:
+        try:
+            if position.type == InstrumentType.SHARE:
+                quote = await get_moex_share(position.ticker)
+            elif position.type == InstrumentType.BOND:
+                quote = await get_moex_bond(position.ticker)
+            else:
+                return position, None
+
+            return position, quote
+
+        except (httpx.HTTPError, asyncio.TimeoutError):
+            return position, None
+
 
 async def build_portfolio() -> list[PortfolioItem]:
     positions = await list_positions()
-    result: list[PortfolioItem] = []
 
-    for position in positions:
-        if position.type == InstrumentType.SHARE:
-            quote = await get_moex_share(position.ticker)
-        elif position.type == InstrumentType.BOND:
-            quote = await get_moex_bond(position.ticker)
-        else:
-            raise ValueError(f"Неизвестный тип инструмента {position.type}")
+    # ⏱ одна временная метка на всю сборку
+    now = datetime.utcnow()
 
-        if quote.price is None:
-            raise ValueError(f"Нет цены для тикера {position.ticker}")
+    tasks = [_load_quote(p) for p in positions]
+    results = await asyncio.gather(*tasks)
+
+    portfolio: list[PortfolioItem] = []
+
+    for position, quote in results:
+        price = quote.price if quote and quote.price else None
 
         item = PortfolioItem(
             ticker=position.ticker,
             type=position.type,
-            price=quote.price,
-            updated_at=datetime.utcnow(),
+            price=price,
+            updated_at=now,
             current_qty=position.current_qty,
             target_qty=position.target_qty,
-            value=round(position.current_qty * quote.price, 2),
+            value=round(position.current_qty * price, 2) if price else None,
             progress_percent=progress_percent(position),
             remaining_qty=remaining_qty(position),
         )
 
-        result.append(item)
+        portfolio.append(item)
 
-    return result
+    return portfolio

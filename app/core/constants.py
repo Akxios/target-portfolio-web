@@ -1,1 +1,2 @@
 PORTFOLIO_COLLECTION = "portfolio_assets"
+MOEX_MAX_CONCURRENCY = 5
