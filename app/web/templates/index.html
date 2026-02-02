@@ -158,9 +158,15 @@
                             <div class="pie-wrap">
                                 <canvas
                                     id="pie-chart"
-                                    width="120"
-                                    height="120"
+                                    width="240"
+                                    height="240"
+                                    aria-label="Структура портфеля"
                                 ></canvas>
+                                <div
+                                    id="pie-legend"
+                                    class="pie-legend"
+                                    aria-hidden="false"
+                                ></div>
                             </div>
                         </section>
 
@@ -293,6 +299,7 @@
             </tr>
         </template>
 
+        <script src="static/js/pie-chart.js"></script>
         <script src="static/js/scripts.js"></script>
     </body>
 </html>
