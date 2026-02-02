@@ -16,22 +16,28 @@ function debounce(fn, delay = 400) {
   };
 }
 
+async function fetchJSON(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let json = null;
+    try {
+      json = JSON.parse(text || "{}");
+    } catch {}
+    const err = json?.detail || text || res.statusText || "network error";
+    const e = new Error(err);
+    e.status = res.status;
+    e.body = json;
+    throw e;
+  }
+  if (res.status === 204) return null;
+  return res.json().catch(() => null);
+}
+
 let portfolio = [];
 let selectedItem = null;
 let sortKey = "ticker";
 let sortDir = 1;
-
-async function fetchPortfolio() {
-  try {
-    const resp = await fetch("/api/portfolio");
-    if (!resp.ok) throw new Error("network");
-    portfolio = await resp.json();
-    render();
-  } catch (e) {
-    console.error(e);
-    toast("Не удалось загрузить портфель");
-  }
-}
 
 function formatCurrency(v) {
   if (typeof v !== "number" || Number.isNaN(v)) return "—";
@@ -61,27 +67,83 @@ function computeTotals() {
 
 function renderStats() {
   const t = computeTotals();
-  const elTotal = $("total-value");
-  const elAchieved = $("achieved-value");
-  const elAvg = $("average-price");
-  const elCount = $("total-count");
-  if (elTotal) elTotal.textContent = formatCurrency(t.totalValue);
-  if (elAchieved) elAchieved.textContent = t.achieved + " %";
-  if (elAvg) elAvg.textContent = formatCurrency(t.avgPrice);
-  if (elCount) elCount.textContent = portfolio.length;
+  $("total-value") &&
+    ($("total-value").textContent = formatCurrency(t.totalValue));
+  $("achieved-value") && ($("achieved-value").textContent = t.achieved + " %");
+  $("average-price") &&
+    ($("average-price").textContent = formatCurrency(t.avgPrice));
+  $("total-count") && ($("total-count").textContent = portfolio.length);
+}
+
+function createRowNode(item) {
+  const tpl = document.getElementById("row-template");
+  if (!tpl) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="col-asset"><strong>${item.name ?? item.ticker ?? "—"}</strong>
+        <span class="asset-type hint">${item.ticker ?? ""} · ${item.type === "share" ? "Акция" : "Облигация"}</span>
+      </td>
+      <td class="col-num">${formatCurrency(Number(item.price))}</td>
+      <td class="col-num">${item.current_qty ?? 0}</td>
+      <td class="col-num">${item.target_qty ?? 0}</td>
+      <td class="col-num strong">${formatCurrency(Number(item.value))}</td>
+      <td class="col-progress">
+        <div class="progress" aria-valuenow="0"><div class="bar" style="width:0%"></div></div>
+      </td>
+    `;
+    return tr;
+  }
+
+  const clone = tpl.content.cloneNode(true);
+  const tr = clone.querySelector("tr");
+
+  const nameEl = clone.querySelector(".row-ticker");
+  if (nameEl) nameEl.textContent = item.name ?? item.ticker ?? "—";
+
+  const assetMeta = clone.querySelector(".asset-type");
+  if (assetMeta)
+    assetMeta.textContent = `${item.ticker ?? "—"} · ${item.type === "share" ? "Акция" : "Облигация"}`;
+
+  const cols = clone.querySelectorAll("td");
+
+  if (cols.length >= 6) {
+    cols[1].textContent = formatCurrency(Number(item.price));
+    cols[2].textContent = item.current_qty ?? 0;
+    cols[3].textContent = item.target_qty ?? 0;
+    cols[4].textContent = formatCurrency(Number(item.value));
+    const progress =
+      item.target_qty > 0
+        ? Math.min((item.current_qty / item.target_qty) * 100, 100)
+        : 0;
+    const progressBar = cols[5].querySelector(".bar");
+    const progressPercent = cols[5].querySelector(".progress-percent");
+    if (progressBar) progressBar.style.width = `${Math.round(progress)}%`;
+    if (progressPercent)
+      progressPercent.textContent = `${Math.round(progress)}%`;
+  }
+
+  tr.addEventListener("click", () => openEditModal(item));
+
+  return tr;
 }
 
 function renderTable() {
   const tbody = $("portfolio-body");
   if (!tbody) return;
-  tbody.innerHTML = "";
 
-  const q = $("search-input")?.value.trim().toLowerCase() ?? "";
+  const q = $("search-input")?.value?.trim()?.toLowerCase() ?? "";
   const filter = $("filter-type")?.value ?? "all";
 
   let items = portfolio.filter((it) => {
     if (filter !== "all" && it.type !== filter) return false;
-    if (q && !(it.ticker ?? "").toLowerCase().includes(q)) return false;
+    if (
+      q &&
+      !(
+        (it.ticker ?? "").toLowerCase().includes(q) ||
+        (it.name ?? "").toLowerCase().includes(q)
+      )
+    )
+      return false;
     return true;
   });
 
@@ -94,75 +156,28 @@ function renderTable() {
     return av.toString().localeCompare(bv.toString()) * sortDir;
   });
 
+  const frag = document.createDocumentFragment();
   for (const it of items) {
-    const progress =
-      it.target_qty > 0
-        ? Math.min((it.current_qty / it.target_qty) * 100, 100)
-        : 0;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="col-asset">
-        <strong>${it.name ?? it.ticker ?? "—"}</strong>
-        <span class="asset-type">
-          ${it.ticker} · ${it.type === "share" ? "Акция" : "Облигация"}
-        </span>
-      </td>
-
-
-      <td class="col-num">${formatCurrency(Number(it.price))}</td>
-      <td class="col-num">${it.current_qty ?? 0}</td>
-      <td class="col-num">${it.target_qty ?? 0}</td>
-      <td class="col-num strong">${formatCurrency(Number(it.value))}</td>
-
-      <td class="col-progress">
-        <div class="progress" aria-valuenow="${Math.round(progress)}">
-          <div class="bar" style="width:${progress}%"></div>
-        </div>
-      </td>
-    `;
-
-    tr.addEventListener("click", () => openEditModal(it));
-    tbody.appendChild(tr);
+    frag.appendChild(createRowNode(it));
   }
+  tbody.innerHTML = "";
+  tbody.appendChild(frag);
 }
 
 function render() {
   renderStats();
   renderTable();
-  drawPie();
+  if (window.pieChart?.update) window.pieChart.update(portfolio);
 }
 
-function drawPie() {
-  const canvas = $("pie-chart");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  const w = canvas.width,
-    h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-
-  const values = portfolio
-    .map((p) => Number(p.value) || 0)
-    .filter((v) => v > 0);
-  const total = values.reduce((a, b) => a + b, 0);
-  if (!total) {
-    ctx.fillStyle = "#f3f2ff";
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#7b61ff";
-    ctx.font = "12px Inter, system-ui";
-    ctx.fillText("Нет данных", 18, h / 2);
-    return;
-  }
-
-  let start = -Math.PI / 2;
-  for (let i = 0; i < values.length; i++) {
-    const slice = (values[i] / total) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.moveTo(w / 2, h / 2);
-    ctx.arc(w / 2, h / 2, Math.min(w, h) / 2 - 6, start, start + slice);
-    ctx.closePath();
-    ctx.fillStyle = `hsl(${(i * 62) % 360} 70% 60%)`;
-    ctx.fill();
-    start += slice;
+async function fetchPortfolio() {
+  try {
+    const data = await fetchJSON("/api/portfolio");
+    portfolio = Array.isArray(data) ? data : [];
+    render();
+  } catch (e) {
+    console.error(e);
+    toast("Не удалось загрузить портфель");
   }
 }
 
@@ -171,10 +186,10 @@ function openEditModal(item) {
   const root = $("modal-root");
   if (!root) return;
   root.style.display = "flex";
-  $("edit-ticker").value = item.ticker ?? "";
-  $("edit-type").value = item.type ?? "share";
-  $("edit-current").value = item.current_qty ?? "";
-  $("edit-target").value = item.target_qty ?? "";
+  if ($("edit-ticker")) $("edit-ticker").value = item.ticker ?? "";
+  if ($("edit-type")) $("edit-type").value = item.type ?? "share";
+  if ($("edit-current")) $("edit-current").value = item.current_qty ?? "";
+  if ($("edit-target")) $("edit-target").value = item.target_qty ?? "";
 }
 
 function closeEditModal() {
@@ -195,22 +210,20 @@ function closeAddModal() {
   if (!root) return;
   root.style.display = "none";
 
-  // reset fields
   const typeBtns = document.querySelectorAll("#add-type-switch .type-btn");
   typeBtns.forEach((b) => b.classList.remove("active"));
   if (typeBtns[0]) typeBtns[0].classList.add("active");
 
-  $("add-type").value = "share";
-  $("add-ticker").value = "";
-  $("add-current").value = "";
-  $("add-target").value = "";
+  if ($("add-type")) $("add-type").value = "share";
+  if ($("add-ticker")) $("add-ticker").value = "";
+  if ($("add-current")) $("add-current").value = "";
+  if ($("add-target")) $("add-target").value = "";
 }
 
 const assetSearchInput = $("asset-search-input");
 const assetSearchResults = $("asset-search-results");
 
 function getSelectedAssetType() {
-  // prefer the active button in asset-search-type, fallback to add-type
   return (
     document.querySelector(".asset-type-btn.active")?.dataset.type ||
     document.querySelector("#add-type")?.value ||
@@ -252,6 +265,7 @@ function renderAssetResults(items) {
     return;
   }
 
+  const frag = document.createDocumentFragment();
   items.forEach((it) => {
     const div = document.createElement("div");
     div.className = "asset-search-item";
@@ -268,38 +282,36 @@ function renderAssetResults(items) {
 
     div.addEventListener("click", () => {
       openAddModal();
-      $("add-ticker").value = ticker;
-      $("add-type").value = type;
-
+      if ($("add-ticker")) $("add-ticker").value = ticker;
+      if ($("add-type")) $("add-type").value = type;
       document.querySelectorAll("#add-type-switch .type-btn").forEach((b) => {
         b.classList.toggle("active", b.dataset.type === type);
       });
-
       assetSearchResults.style.display = "none";
     });
 
-    assetSearchResults.appendChild(div);
+    frag.appendChild(div);
   });
 
+  assetSearchResults.appendChild(frag);
   assetSearchResults.style.display = "block";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  window.pieChart?.init();
+  window.addEventListener("resize", () => window.pieChart?.resize());
+
   document.querySelectorAll("th[data-key]").forEach((th) => {
     th.addEventListener("click", () => {
       const key = th.dataset.key;
-
       document
         .querySelectorAll("th[data-key]")
         .forEach((h) => h.classList.remove("sorted-asc", "sorted-desc"));
-
-      if (sortKey === key) {
-        sortDir = -sortDir;
-      } else {
+      if (sortKey === key) sortDir = -sortDir;
+      else {
         sortKey = key;
         sortDir = 1;
       }
-
       th.classList.add(sortDir === 1 ? "sorted-asc" : "sorted-desc");
       renderTable();
     });
@@ -325,7 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .querySelectorAll("#add-type-switch .type-btn")
         .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      $("add-type").value = btn.dataset.type;
+      if ($("add-type")) $("add-type").value = btn.dataset.type;
     });
   });
 
@@ -335,18 +347,16 @@ document.addEventListener("DOMContentLoaded", () => {
         .querySelectorAll(".asset-type-btn")
         .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-
       const q = assetSearchInput?.value.trim() ?? "";
       if (q.length >= 2) searchAssetsGlobal(q);
     });
   });
 
-  if (assetSearchInput) {
+  if (assetSearchInput)
     assetSearchInput.addEventListener(
       "input",
       debounce((e) => searchAssetsGlobal(e.target.value)),
     );
-  }
 
   $("submit-add")?.addEventListener("click", async () => {
     const ticker = $("add-ticker")?.value.trim();
@@ -360,24 +370,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const resp = await fetch("/api/portfolio/positions", {
+      await fetchJSON("/api/portfolio/positions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ticker, type, current_qty, target_qty }),
       });
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ detail: "Ошибка" }));
-        toast(err.detail ?? "Ошибка при добавлении актива");
-        return;
-      }
-
       toast("Актив добавлен");
       closeAddModal();
       await fetchPortfolio();
     } catch (e) {
       console.error(e);
-      toast("Ошибка сети при добавлении");
+      toast(e.message || "Ошибка при добавлении актива");
     }
   });
 
@@ -387,11 +390,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const current_qty = Number($("edit-current")?.value || 0);
     const target_qty = Number($("edit-target")?.value || 0);
     try {
-      await fetch(
+      await fetchJSON(
         `/api/portfolio/assets/${encodeURIComponent(ticker)}/current?current_qty=${current_qty}`,
         { method: "PATCH" },
       );
-      await fetch(
+      await fetchJSON(
         `/api/portfolio/assets/${encodeURIComponent(ticker)}/target?target_qty=${target_qty}`,
         { method: "PATCH" },
       );
@@ -408,7 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!selectedItem) return;
     if (!confirm(`Удалить ${selectedItem.ticker}?`)) return;
     try {
-      await fetch(
+      await fetchJSON(
         `/api/portfolio/assets/${encodeURIComponent(selectedItem.ticker)}`,
         { method: "DELETE" },
       );
@@ -423,24 +426,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("refresh-btn")?.addEventListener("click", fetchPortfolio);
   $("bulk-export")?.addEventListener("click", () => {
-    const rows = Array.from(document.querySelectorAll("#portfolio-body tr"));
-    if (rows.length === 0) {
+    if (!portfolio || portfolio.length === 0) {
       toast("Нет данных для экспорта");
       return;
     }
-    const csv = ["ticker,type,price,current_qty,target_qty,value"];
-    rows.forEach((r) => {
-      const cols = r.querySelectorAll("td");
-      const vals = [
-        cols[0].innerText.trim(),
-        cols[1].innerText.trim(),
-        cols[2].innerText.replace(/\s|₽/g, ""),
-        cols[3].innerText.trim(),
-        cols[4].innerText.trim(),
-        cols[5].innerText.replace(/\s|₽/g, ""),
-      ];
-      csv.push(vals.join(","));
-    });
+    const header = [
+      "ticker",
+      "type",
+      "price",
+      "current_qty",
+      "target_qty",
+      "value",
+    ];
+    const csv = [header.join(",")];
+    for (const p of portfolio) {
+      csv.push(
+        [
+          p.ticker ?? "",
+          p.type ?? "",
+          Number(p.price) || "",
+          p.current_qty ?? "",
+          p.target_qty ?? "",
+          Number(p.value) || "",
+        ].join(","),
+      );
+    }
     const blob = new Blob([csv.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -452,6 +462,4 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   fetchPortfolio();
-
-  window.addEventListener("resize", drawPie);
 });
