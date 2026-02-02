@@ -38,6 +38,7 @@ async def api_add_position(payload: PositionCreate):
 
     position = Position(
         ticker=ticker,
+        name=instrument.name,
         type=payload.type,
         target_qty=payload.target_qty,
         current_qty=payload.current_qty,
