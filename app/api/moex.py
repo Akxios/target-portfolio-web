@@ -18,4 +18,15 @@ async def api_get_instrument(ticker: str, type: InstrumentType):
 
 @router.get("/search")
 async def api_search_moex(ticker: str, type: InstrumentType):
-    return await search_moex_instruments(ticker, type)
+    items = await search_moex_instruments(ticker, type)
+
+    return [
+        {
+            "ticker": it.secid,
+            "name": it.name,
+            "shortname": it.shortname,
+            "isin": it.isin,
+            "type": "share" if type == InstrumentType.SHARE else "bond",
+        }
+        for it in items
+    ]
