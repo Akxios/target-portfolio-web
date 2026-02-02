@@ -102,9 +102,12 @@ function renderTable() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td class="col-asset">
-        <strong>${it.ticker ?? "—"}</strong>
-        <span class="asset-type">${it.type === "share" ? "Акция" : "Облигация"}</span>
+        <strong>${it.name ?? it.ticker ?? "—"}</strong>
+        <span class="asset-type">
+          ${it.ticker} · ${it.type === "share" ? "Акция" : "Облигация"}
+        </span>
       </td>
+
 
       <td class="col-num">${formatCurrency(Number(it.price))}</td>
       <td class="col-num">${it.current_qty ?? 0}</td>
