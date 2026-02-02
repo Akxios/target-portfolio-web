@@ -2,8 +2,9 @@
 <html lang="ru">
     <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Target Portfolio</title>
+
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap"
@@ -11,214 +12,199 @@
         />
         <link rel="stylesheet" href="static/css/styles.css" />
     </head>
+
     <body>
         <div class="container">
             <header class="app-header">
                 <div class="brand">
-                    <div>
-                        <h1>Target Portfolio</h1>
-                        <p class="lead">
-                            Следи за целями портфеля, корректируй позиции и
-                            смотри прогресс в реальном времени.
-                        </p>
-                    </div>
+                    <h1>Target Portfolio</h1>
+                    <p class="lead">
+                        Следи за целями портфеля, корректируй позиции и смотри
+                        прогресс в реальном времени.
+                    </p>
                 </div>
 
                 <div class="controls">
-                    <div
-                        class="filters"
-                        style="display: flex; gap: 10px; align-items: center"
-                    >
-                        <div
-                            class="search"
-                            role="search"
-                            aria-label="Поиск по тикерам"
-                        >
-                            <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                style="opacity: 0.7"
-                            >
-                                <path
-                                    d="M21 21l-4.35-4.35"
-                                    stroke="currentColor"
-                                    stroke-width="1.6"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                ></path>
-                                <circle
-                                    cx="11"
-                                    cy="11"
-                                    r="6"
-                                    stroke="currentColor"
-                                    stroke-width="1.6"
-                                ></circle>
-                            </svg>
-                            <input
-                                id="search-input"
-                                placeholder="Поиск SBER, AAPL..."
-                            />
-                        </div>
-
-                        <select
-                            id="filter-type"
-                            class="select"
-                            aria-label="Фильтр по типу"
-                        >
-                            <option value="all">Все типы</option>
-                            <option value="share">Акции</option>
-                            <option value="bond">Облигации</option>
-                        </select>
-                    </div>
-
                     <button id="refresh-btn" class="btn ghost">Обновить</button>
-                    <button id="add-btn" class="btn">Добавить актив</button>
                 </div>
             </header>
 
             <main>
                 <div class="top-row">
-                    <section class="card">
-                        <div
-                            style="
-                                display: flex;
-                                justify-content: space-between;
-                                align-items: center;
-                                margin-bottom: 14px;
-                            "
-                        >
-                            <div>
-                                <h3 style="margin: 0; color: var(--muted)">
-                                    Портфель
-                                </h3>
-                                <p
-                                    style="
-                                        margin: 6px 0 0;
-                                        color: #9987ff;
-                                        font-weight: 600;
-                                    "
-                                >
-                                    Обновлено автоматически
-                                </p>
-                            </div>
-                            <div style="text-align: right">
-                                <div
-                                    style="font-size: 12px; color: var(--muted)"
-                                >
-                                    Всего позиций
-                                </div>
-                                <div
-                                    id="total-count"
-                                    style="font-weight: 800; font-size: 18px"
-                                >
-                                    —
-                                </div>
-                            </div>
-                        </div>
+                    <div class="left-column">
+                        <input
+                            id="asset-search-toggle"
+                            class="asset-search-toggle"
+                            type="checkbox"
+                        />
 
-                        <div
-                            style="
-                                display: grid;
-                                grid-template-columns: repeat(3, 1fr);
-                                gap: 10px;
-                            "
-                        >
-                            <div class="stat">
-                                <h3>Общая стоимость</h3>
-                                <p id="total-value">— ₽</p>
-                            </div>
-                            <div class="stat">
-                                <h3>Достигнуто</h3>
-                                <p id="achieved-value">— %</p>
-                            </div>
-                            <div class="stat">
-                                <h3>Средняя цена</h3>
-                                <p id="average-price">— ₽</p>
-                            </div>
-                        </div>
+                        <section class="card asset-add-card">
+                            <div class="asset-search-body">
+                                <div class="section-head">
+                                    <div>
+                                        <h3>Добавление актива</h3>
+                                        <p class="hint">
+                                            Найди акцию или облигацию и добавь в
+                                            портфель
+                                        </p>
+                                    </div>
+                                </div>
 
-                        <div style="margin-top: 14px">
-                            <table
-                                class="portfolio-table"
-                                aria-describedby="table-desc"
-                            >
-                                <caption id="table-desc" style="display: none">
-                                    Список позиций портфеля
-                                </caption>
-                                <thead>
-                                    <tr>
-                                        <th data-key="ticker">Тикер ▲</th>
-                                        <th data-key="type">Тип</th>
-                                        <th data-key="price">Цена</th>
-                                        <th data-key="current_qty">Текущее</th>
-                                        <th data-key="target_qty">Цель</th>
-                                        <th data-key="value">Стоимость</th>
-                                        <th>Прогресс</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="portfolio-body"></tbody>
-                            </table>
-                        </div>
-                    </section>
+                                <div
+                                    class="asset-search-type"
+                                    role="tablist"
+                                    aria-label="Тип актива"
+                                >
+                                    <button
+                                        type="button"
+                                        class="asset-type-btn active"
+                                        data-type="share"
+                                    >
+                                        Акция
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="asset-type-btn"
+                                        data-type="bond"
+                                    >
+                                        Облигация
+                                    </button>
+                                    <input
+                                        type="hidden"
+                                        id="asset-search-type"
+                                        value="share"
+                                    />
+                                </div>
+
+                                <div class="asset-search-input">
+                                    <input
+                                        id="asset-search-input"
+                                        placeholder="SBER, AAPL, ОФЗ 26238…"
+                                        autocomplete="off"
+                                    />
+                                </div>
+
+                                <div
+                                    id="asset-search-results"
+                                    class="asset-search-results"
+                                    aria-live="polite"
+                                ></div>
+
+                                <div
+                                    id="asset-preview"
+                                    class="asset-preview"
+                                    hidden
+                                >
+                                    <div>
+                                        <strong id="preview-ticker">—</strong>
+                                        <div
+                                            id="preview-name"
+                                            class="hint"
+                                        ></div>
+                                    </div>
+                                    <button
+                                        id="preview-add"
+                                        class="btn secondary"
+                                    >
+                                        Добавить
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="card">
+                            <div class="section-head">
+                                <div>
+                                    <h3>Портфель</h3>
+                                    <p class="hint">
+                                        Текущие позиции и целевые значения
+                                    </p>
+                                </div>
+
+                                <div class="portfolio-meta">
+                                    <span class="hint">Позиций:</span>
+                                    <strong id="total-count">—</strong>
+                                </div>
+                            </div>
+
+                            <div class="stats-grid">
+                                <div class="stat">
+                                    <h3>Общая стоимость</h3>
+                                    <p id="total-value">— ₽</p>
+                                </div>
+                                <div class="stat">
+                                    <h3>Достигнуто</h3>
+                                    <p id="achieved-value">— %</p>
+                                </div>
+                                <div class="stat">
+                                    <h3>Средняя цена</h3>
+                                    <p id="average-price">— ₽</p>
+                                </div>
+                            </div>
+
+                            <div class="table-wrap">
+                                <table
+                                    class="portfolio-table"
+                                    aria-describedby="portfolio-desc"
+                                >
+                                    <colgroup>
+                                        <col class="col-c-asset" />
+                                        <col class="col-c-price" />
+                                        <col class="col-c-current" />
+                                        <col class="col-c-target" />
+                                        <col class="col-c-value" />
+                                        <col class="col-c-progress" />
+                                    </colgroup>
+
+                                    <thead>
+                                        <tr>
+                                            <th data-key="ticker">Актив</th>
+                                            <th data-key="price">Цена</th>
+                                            <th data-key="current_qty">
+                                                Текущее
+                                            </th>
+                                            <th data-key="target_qty">Цель</th>
+                                            <th data-key="value">Стоимость</th>
+                                            <th>Прогресс</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody id="portfolio-body"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
 
                     <aside class="right-column">
-                        <div class="card mini-card">
+                        <section class="card mini-card">
                             <div>
-                                <strong>Разбивка по активам</strong>
-                                <div
-                                    style="
-                                        font-size: 13px;
-                                        color: var(--muted);
-                                        margin-top: 6px;
-                                    "
-                                >
-                                    Доли по стоимости
-                                </div>
+                                <strong>Структура портфеля</strong>
+                                <div class="hint">Доли по стоимости</div>
                             </div>
-                            <div
-                                style="
-                                    width: 120px;
-                                    height: 120px;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                "
-                            >
+                            <div class="pie-wrap">
                                 <canvas
                                     id="pie-chart"
-                                    class="pie"
                                     width="120"
                                     height="120"
                                 ></canvas>
                             </div>
-                        </div>
+                        </section>
 
-                        <div class="card">
-                            <h4 style="margin: 0 0 8px">Быстрые действия</h4>
-                            <button
-                                id="bulk-export"
-                                class="btn ghost"
-                                style="width: 100%; margin-bottom: 8px"
-                            >
+                        <section class="card">
+                            <h4 style="margin: 0 0 10px">Быстрые действия</h4>
+                            <button id="bulk-export" class="btn ghost full">
                                 Экспорт CSV
                             </button>
-                            <button
-                                id="recalculate"
-                                class="btn ghost"
-                                style="width: 100%"
-                            >
+                            <button id="recalculate" class="btn ghost full">
                                 Пересчитать веса
                             </button>
-                        </div>
+                        </section>
                     </aside>
                 </div>
             </main>
         </div>
 
-        <!-- Edit modal -->
-        <div id="modal-root" class="modal-overlay">
+        <div id="modal-root" class="modal-overlay" aria-hidden="true">
             <div
                 class="modal"
                 role="dialog"
@@ -226,34 +212,36 @@
                 aria-labelledby="modal-title"
             >
                 <h3 id="modal-title">Изменить актив</h3>
+
                 <div class="field">
-                    <label>Тикер</label><input id="edit-ticker" disabled />
+                    <label>Тикер</label>
+                    <input id="edit-ticker" disabled />
                 </div>
                 <div class="field">
-                    <label>Тип</label
-                    ><select id="edit-type">
+                    <label>Тип</label>
+                    <select id="edit-type">
                         <option value="share">Акция</option>
                         <option value="bond">Облигация</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label>Текущее количество</label
-                    ><input id="edit-current" type="number" min="0" />
+                    <label>Текущее количество</label>
+                    <input id="edit-current" type="number" min="0" />
                 </div>
                 <div class="field">
-                    <label>Цель</label
-                    ><input id="edit-target" type="number" min="0" />
+                    <label>Цель</label>
+                    <input id="edit-target" type="number" min="0" />
                 </div>
+
                 <div class="modal-actions">
-                    <button id="save-edit" class="btn">Сохранить</button
-                    ><button id="delete-edit" class="btn ghost">Удалить</button
-                    ><button id="close-edit" class="btn ghost">Отмена</button>
+                    <button id="save-edit" class="btn">Сохранить</button>
+                    <button id="delete-edit" class="btn ghost">Удалить</button>
+                    <button id="close-edit" class="btn ghost">Отмена</button>
                 </div>
             </div>
         </div>
 
-        <!-- Add modal -->
-        <div id="add-root" class="modal-overlay">
+        <div id="add-root" class="modal-overlay" aria-hidden="true">
             <div
                 class="modal"
                 role="dialog"
@@ -261,47 +249,78 @@
                 aria-labelledby="add-title"
             >
                 <h3 id="add-title">Добавить актив</h3>
+
                 <div class="field">
-                    <label>Тикер</label
-                    ><input id="add-ticker" placeholder="SBER" />
+                    <label>Тикер</label>
+                    <input id="add-ticker" placeholder="SBER" />
                 </div>
+
                 <div class="field">
                     <label>Тип</label>
-                    <div
-                        class="type-switch"
-                        id="add-type-switch"
-                        style="margin-top: 6px"
-                    >
+                    <div id="add-type-switch" class="asset-search-type">
                         <button
                             type="button"
-                            class="type-btn active"
+                            class="asset-type-btn active"
                             data-type="share"
                         >
                             Акция
                         </button>
-                        <button type="button" class="type-btn" data-type="bond">
+                        <button
+                            type="button"
+                            class="asset-type-btn"
+                            data-type="bond"
+                        >
                             Облигация
                         </button>
                     </div>
                     <input type="hidden" id="add-type" value="share" />
                 </div>
+
                 <div class="field">
-                    <label>Текущее количество</label
-                    ><input id="add-current" type="number" min="0" />
+                    <label>Текущее количество</label>
+                    <input id="add-current" type="number" min="0" />
                 </div>
+
                 <div class="field">
-                    <label>Цель</label
-                    ><input id="add-target" type="number" min="0" />
+                    <label>Цель</label>
+                    <input id="add-target" type="number" min="0" />
                 </div>
+
                 <div class="modal-actions">
                     <button id="submit-add" class="btn secondary">
-                        Добавить</button
-                    ><button id="close-add" class="btn ghost">Отмена</button>
+                        Добавить
+                    </button>
+                    <button id="close-add" class="btn ghost">Отмена</button>
                 </div>
             </div>
         </div>
 
         <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+        <template id="row-template">
+            <tr>
+                <td class="col-asset">
+                    <strong class="row-ticker">TICK</strong>
+                    <span class="asset-type hint">Тип</span>
+                </td>
+                <td class="col-num">0 ₽</td>
+                <td class="col-num">0</td>
+                <td class="col-num">0</td>
+                <td class="col-num strong">0 ₽</td>
+                <td class="col-progress">
+                    <div
+                        class="progress"
+                        role="progressbar"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="0"
+                    >
+                        <div class="bar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-percent">0%</div>
+                </td>
+            </tr>
+        </template>
 
         <script src="static/js/scripts.js"></script>
     </body>
