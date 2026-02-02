@@ -23,6 +23,7 @@ async def upsert_position(position: Position) -> None:
         {"ticker": position.ticker},
         {
             "$set": {
+                "name": position.name,
                 "type": position.type,
                 "target_qty": position.target_qty,
                 "current_qty": position.current_qty,
