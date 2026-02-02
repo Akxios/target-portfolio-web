@@ -4,6 +4,7 @@ from pymoex.models.enums import InstrumentType
 
 class Position(BaseModel):
     ticker: str
+    name: str
     type: InstrumentType
 
     target_qty: int = Field(..., ge=0)

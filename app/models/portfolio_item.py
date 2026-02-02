@@ -6,6 +6,7 @@ from pymoex.models.enums import InstrumentType
 
 class PortfolioItem(BaseModel):
     ticker: str = Field(..., examples=["SBER"])
+    name: str = Field(..., examples=["Сбербанк"])
     type: InstrumentType
 
     price: float | None = Field(
