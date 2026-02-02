@@ -44,6 +44,7 @@ async def build_portfolio() -> list[PortfolioItem]:
 
         item = PortfolioItem(
             ticker=position.ticker,
+            name=position.name,
             type=position.type,
             price=price,
             updated_at=now,

@@ -32,6 +32,7 @@ async def add_position_service(position: Position) -> None:
 
     normalized = Position(
         ticker=position.ticker.upper(),
+        name=position.name,
         type=position.type,
         target_qty=position.target_qty,
         current_qty=position.current_qty,
