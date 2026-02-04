@@ -27,7 +27,7 @@ async def get_moex_bond(ticker: str) -> MoexBondOut:
             ticker=bond.sec_id,
             name=bond.short_name,
             price=bond.last_price,
-            yield_percent=bond.yield_percent,
+            effective_yield=bond.effective_yield,
             coupon_value=bond.coupon_value,
         )
 
