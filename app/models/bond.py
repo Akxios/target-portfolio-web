@@ -9,7 +9,7 @@ class MoexBondOut(BaseModel):
         None,
         description="Текущая цена (может отсутствовать)",
     )
-    yield_percent: float | None = Field(
+    effective_yield: float | None = Field(
         None,
         description="Доходность, % годовых (может отсутствовать)",
     )
