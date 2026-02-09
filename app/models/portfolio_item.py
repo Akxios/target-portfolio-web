@@ -22,9 +22,9 @@ class PortfolioItem(BaseModel):
     current_qty: int = Field(..., ge=0)
     target_qty: int = Field(..., ge=0)
 
-    value: float | None = Field(
+    value: Decimal | None = Field(
         None,
         description="Текущая стоимость позиции (может отсутствовать)",
     )
-    progress_percent: float = Field(..., ge=0, le=100)
+    progress_percent: Decimal = Field(..., ge=0)
     remaining_qty: int = Field(..., ge=0)
