@@ -3,8 +3,9 @@ from pymoex.models.enums import InstrumentType
 
 
 class Position(BaseModel):
-    ticker: str
-    name: str
+    ticker: str = Field(..., examples=["SBER"])
+    name: str = Field(..., examples=["ОФЗ 26238"])
+    short_name: str = Field(examples=["ОФЗ"])
     type: InstrumentType
 
     target_qty: int = Field(..., ge=0)
