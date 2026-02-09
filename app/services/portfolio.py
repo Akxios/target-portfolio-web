@@ -1,3 +1,5 @@
+from decimal import ROUND_HALF_UP, Decimal
+
 from app.exceptions import AssetNotFoundError, InvalidQuantityError
 from app.models.position import Position
 from app.repositories.portfolio import (
@@ -13,12 +15,14 @@ def remaining_qty(position: Position) -> int:
     return max(position.target_qty - position.current_qty, 0)
 
 
-def progress_percent(position: Position) -> float:
+def progress_percent(position: Position) -> Decimal:
     """Процент выполнения цели"""
     if position.target_qty == 0:
-        return 0.0
-    percent = position.current_qty / position.target_qty * 100
-    return round(min(percent, 100.0), 2)
+        return Decimal("0.00")
+
+    percent = Decimal(position.current_qty) / Decimal(position.target_qty) * 100
+
+    return percent.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
 def is_target_reached(position: Position) -> bool:
