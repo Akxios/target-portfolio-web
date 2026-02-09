@@ -757,7 +757,7 @@ wheels = [
 [[package]]
 name = "pymoex"
 version = "0.1.35"
-source = { git = "ssh://git@github.com/Akxios/pymoex.git?rev=dev#e0b463e6161687a2ec747e042ed46525c96ec2f5" }
+source = { git = "ssh://git@github.com/Akxios/pymoex.git?rev=dev#469b8d5f9b100b5f2da8c59524b9825289efe164" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },

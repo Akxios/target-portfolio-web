@@ -14,7 +14,8 @@ async def get_moex_share(ticker: str) -> MoexShareOut:
 
         return MoexShareOut(
             ticker=share.sec_id,
-            name=share.short_name,
+            short_name=share.short_name,
+            name=share.name,
             price=share.last_price,
         )
 
@@ -25,7 +26,8 @@ async def get_moex_bond(ticker: str) -> MoexBondOut:
 
         return MoexBondOut(
             ticker=bond.sec_id,
-            name=bond.short_name,
+            name=bond.name or bond.short_name,
+            short_name=bond.short_name,
             price=bond.last_price,
             effective_yield=bond.effective_yield,
             coupon_value=bond.coupon_value,
