@@ -22,9 +22,9 @@ async def api_search_moex(ticker: str, type: InstrumentType):
 
     return [
         {
-            "ticker": it.secid,
+            "ticker": it.sec_id,
             "name": it.name,
-            "shortname": it.shortname,
+            "short_name": it.short_name,
             "isin": it.isin,
             "type": "share" if type == InstrumentType.SHARE else "bond",
         }

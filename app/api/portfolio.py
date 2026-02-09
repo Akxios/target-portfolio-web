@@ -22,10 +22,11 @@ async def api_get_portfolio():
     return await build_portfolio()
 
 
-@router.post("/positions", status_code=status.HTTP_201_CREATED)
+@router.post("/positions", status_code=status.HTTP_201_CREATED, response_model=Position)
 async def api_add_position(payload: PositionCreate):
     ticker = payload.ticker.upper()
 
+    # 1. Загружаем данные (SDK)
     if payload.type == InstrumentType.SHARE:
         instrument = await get_moex_share(ticker)
     elif payload.type == InstrumentType.BOND:
@@ -36,20 +37,24 @@ async def api_add_position(payload: PositionCreate):
     if not instrument:
         raise HTTPException(404, "Instrument not found on MOEX")
 
+    # 2. Создаем позицию (Logic)
+    # Используем instrument.short_name как страховку, если полного имени нет
+    safe_name = instrument.name or instrument.short_name
+
     position = Position(
         ticker=ticker,
-        name=instrument.name,
+        name=safe_name,  # Гарантированно строка
+        short_name=instrument.short_name,
         type=payload.type,
         target_qty=payload.target_qty,
         current_qty=payload.current_qty,
     )
 
+    # 3. Сохраняем (Service)
     await add_position_service(position)
 
-    return {
-        "status": "created",
-        "ticker": ticker,
-    }
+    # 4. Возвращаем объект (FastAPI сам сделает JSON)
+    return position
 
 
 @router.patch("/assets/{ticker}/target")
