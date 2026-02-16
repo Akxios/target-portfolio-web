@@ -19,12 +19,19 @@
                 <div class="brand">
                     <h1>Target Portfolio</h1>
                     <p class="lead">
-                        Следи за целями портфеля, корректируй позиции и смотри
-                        прогресс в реальном времени.
+                        Следи за целями портфеля и смотри прогресс в реальном
+                        времени.
                     </p>
                 </div>
 
                 <div class="controls">
+                    <button
+                        id="open-add-modal"
+                        class="btn primary"
+                        style="margin-right: 10px"
+                    >
+                        + Добавить
+                    </button>
                     <button id="refresh-btn" class="btn ghost">Обновить</button>
                 </div>
             </header>
@@ -32,60 +39,6 @@
             <main>
                 <div class="top-row">
                     <div class="left-column">
-                        <section class="card asset-add-card">
-                            <div class="asset-search-body">
-                                <div class="section-head">
-                                    <div>
-                                        <h3>Добавление актива</h3>
-                                        <p class="hint">
-                                            Найди акцию или облигацию и добавь в
-                                            портфель
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="asset-search-type"
-                                    role="tablist"
-                                    aria-label="Тип актива"
-                                >
-                                    <button
-                                        type="button"
-                                        class="asset-type-btn active"
-                                        data-type="share"
-                                    >
-                                        Акция
-                                    </button>
-                                    <button
-                                        type="button"
-                                        class="asset-type-btn"
-                                        data-type="bond"
-                                    >
-                                        Облигация
-                                    </button>
-                                    <input
-                                        type="hidden"
-                                        id="asset-search-type"
-                                        value="share"
-                                    />
-                                </div>
-
-                                <div class="asset-search-input">
-                                    <input
-                                        id="asset-search-input"
-                                        placeholder="SBER, AAPL, ОФЗ 26238…"
-                                        autocomplete="off"
-                                    />
-                                </div>
-
-                                <div
-                                    id="asset-search-results"
-                                    class="asset-search-results"
-                                    aria-live="polite"
-                                ></div>
-                            </div>
-                        </section>
-
                         <section class="card">
                             <div class="section-head">
                                 <div>
@@ -228,12 +181,7 @@
                 <h3 id="add-title">Добавить актив</h3>
 
                 <div class="field">
-                    <label>Тикер</label>
-                    <input id="add-ticker" placeholder="SBER" />
-                </div>
-
-                <div class="field">
-                    <label>Тип</label>
+                    <label>Тип актива</label>
                     <div id="add-type-switch" class="asset-search-type">
                         <button
                             type="button"
@@ -250,17 +198,34 @@
                             Облигация
                         </button>
                     </div>
+                    <input type="hidden" id="asset-search-type" value="share" />
                     <input type="hidden" id="add-type" value="share" />
+                </div>
+
+                <div class="field" style="position: relative">
+                    <label>Поиск / Тикер</label>
+                    <input
+                        id="asset-search-input"
+                        placeholder="Введите SBER, AAPL..."
+                        autocomplete="off"
+                    />
+                    <div
+                        id="asset-search-results"
+                        class="asset-search-results"
+                        aria-live="polite"
+                    ></div>
+
+                    <input type="hidden" id="add-ticker" />
                 </div>
 
                 <div class="field">
                     <label>Текущее количество</label>
-                    <input id="add-current" type="number" min="0" />
+                    <input id="add-current" type="number" min="0" value="0" />
                 </div>
 
                 <div class="field">
-                    <label>Цель</label>
-                    <input id="add-target" type="number" min="0" />
+                    <label>Цель (шт.)</label>
+                    <input id="add-target" type="number" min="0" value="0" />
                 </div>
 
                 <div class="modal-actions">
