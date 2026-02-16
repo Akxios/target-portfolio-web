@@ -121,22 +121,6 @@ body {
     pointer-events: none;
 }
 
-.card:hover {
-    transform: translateY(-8px) scale(1.015);
-    box-shadow: var(--shadow-md);
-}
-
-.card:hover::after {
-    opacity: 1;
-}
-.card:focus-within {
-    transform: translateY(-3px) scale(1.005);
-}
-@media (hover: hover) {
-    .card:active {
-        transform: translateY(-2px) scale(1.01);
-    }
-}
 .btn {
     border: none;
     padding: 10px 14px;
@@ -157,26 +141,11 @@ body {
 .btn:active {
     transform: translateY(1px) scale(0.997);
 }
-.btn:hover {
-    transform: translateY(-2px) scale(1.01);
-}
+
 .btn {
     background: linear-gradient(90deg, var(--primary), var(--primary-2));
     color: #fff;
     box-shadow: 0 6px 18px rgba(109, 93, 252, 0.12);
-}
-.btn::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        circle at top,
-        rgba(255, 255, 255, 0.28),
-        transparent 55%
-    );
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
 }
 
 .btn:hover::after {
@@ -662,33 +631,21 @@ body {
         font-size: 13px;
     }
 }
-@media (hover: none) {
-    .card:hover,
-    .asset-result:hover,
-    .portfolio-table tbody tr:hover,
-    .btn:hover {
-        transform: none;
-        box-shadow: var(--shadow-sm);
-    }
-}
 
 .pie-wrap {
+    width: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 14px;
+    justify-content: center;
 }
 
+/* Force the canvas to be responsive */
 #pie-chart {
-    width: 120px;
-    height: 120px;
-    cursor: pointer;
-    border-radius: 999px;
-    background: linear-gradient(
-        180deg,
-        rgba(246, 245, 255, 0.6),
-        rgba(255, 255, 255, 0.9)
-    );
-    padding: 6px;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 300px; /* Prevents it from getting TOO big */
+    max-height: 300px;
 }
 
 .pie-legend {
