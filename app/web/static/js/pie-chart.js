@@ -1,12 +1,24 @@
 (function () {
   const $ = (id) => document.getElementById(id);
-
   const canvas = $("pie-chart");
   const legendEl = $("pie-legend");
 
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
+
+  // Палитра
+  const PALETTE = [
+    "#4361ee",
+    "#3a0ca3",
+    "#7209b7",
+    "#f72585",
+    "#4cc9f0",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#6b7280",
+  ];
 
   let tooltip = null;
 
@@ -15,105 +27,116 @@
     total: 0,
     animation: 0,
     hovered: -1,
-    solo: -1,
+    center: { x: 0, y: 0 },
   };
 
   function ensureTooltip() {
     if (tooltip) return tooltip;
     tooltip = document.createElement("div");
     tooltip.className = "pie-tooltip";
-    tooltip.style.display = "none";
+    Object.assign(tooltip.style, {
+      position: "fixed",
+      display: "none",
+      background: "rgba(23, 23, 33, 0.95)",
+      color: "#fff",
+      padding: "8px 12px",
+      borderRadius: "8px",
+      fontSize: "13px",
+      pointerEvents: "none",
+      zIndex: "1000",
+      backdropFilter: "blur(4px)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      border: "1px solid rgba(255,255,255,0.1)",
+    });
     document.body.appendChild(tooltip);
     return tooltip;
   }
 
   function formatMoney(v) {
+    if (v === 0) return "0 ₽";
     if (!v) return "—";
-    if (v >= 1e9) return (v / 1e9).toFixed(2) + "B ₽";
-    if (v >= 1e6) return (v / 1e6).toFixed(2) + "M ₽";
-    if (v >= 1e3) return (v / 1e3).toFixed(1) + "k ₽";
+    if (v >= 1e9) return (v / 1e9).toFixed(2) + " млрд";
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + " млн";
     return v.toLocaleString("ru-RU") + " ₽";
-  }
-
-  function colorFor(i, total) {
-    const baseHue = 255;
-    const step = 360 / Math.max(6, total);
-    return `hsl(${(baseHue + i * step) % 360} 75% 60%)`;
   }
 
   function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.scale(dpr, dpr);
+    canvas.style.width = `${rect.width}px`;
+    canvas.style.height = `${rect.height}px`;
   }
 
   function render(progress = 1) {
-    const { width: w, height: h } = canvas.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
     ctx.clearRect(0, 0, w, h);
 
     const cx = w / 2;
     const cy = h / 2;
-    const r = Math.min(w, h) / 2 - 6;
-    const inner = r * 0.55;
+    const radius = Math.min(w, h) / 2 - 20;
+    const thickness = 25;
 
-    if (!state.total) {
-      ctx.fillStyle = "#f3f2ff";
+    if (!state.total || state.total === 0) {
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#7b61ff";
-      ctx.font = "12px Inter";
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.lineWidth = thickness;
+      ctx.strokeStyle = "#f3f4f6";
+      ctx.stroke();
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "500 13px Inter, sans-serif";
       ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.fillText("Нет данных", cx, cy);
       return;
     }
 
-    let start = -Math.PI / 2;
-    const visible = state.slices
-      .map((_, i) => i)
-      .filter((i) => state.solo === -1 || state.solo === i);
+    let startAngle = -Math.PI / 2;
 
-    for (const i of visible) {
-      const s = state.slices[i];
-      const angle = (s.value / state.total) * Math.PI * 2 * progress;
-      const end = start + angle;
+    state.slices.forEach((slice, i) => {
+      const sliceAngle = (slice.value / state.total) * Math.PI * 2 * progress;
+      const endAngle = startAngle + sliceAngle;
 
-      const mid = (start + end) / 2;
-      const explode = i === state.hovered ? 10 : 0;
-
-      const ox = Math.cos(mid) * explode;
-      const oy = Math.sin(mid) * explode;
+      const isHovered = i === state.hovered;
+      const currentThickness = isHovered ? thickness + 6 : thickness;
 
       ctx.beginPath();
-      ctx.moveTo(cx + ox, cy + oy);
-      ctx.arc(cx + ox, cy + oy, r, start, end);
-      ctx.closePath();
-      ctx.fillStyle = s.color;
-      ctx.fill();
-
-      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.arc(cx, cy, radius, startAngle, endAngle);
+      ctx.strokeStyle = slice.color;
+      ctx.lineWidth = currentThickness;
+      ctx.lineCap = "butt";
       ctx.stroke();
 
-      start = end;
-    }
+      // Разделитель
+      if (state.slices.length > 1) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, endAngle - 0.03, endAngle);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = currentThickness + 2;
+        ctx.stroke();
+      }
+      startAngle = endAngle;
+    });
 
-    ctx.beginPath();
-    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff";
-    ctx.fill();
-
-    ctx.fillStyle = "#151522";
-    ctx.font = "600 13px Inter";
+    // Центр
     ctx.textAlign = "center";
-    ctx.fillText("Всего", cx, cy - 8);
-    ctx.font = "700 14px Inter";
-    ctx.fillText(formatMoney(state.total), cx, cy + 12);
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#6b7280";
+    ctx.font = "500 12px Inter, sans-serif";
+    ctx.fillText("Всего", cx, cy - 10);
+    ctx.fillStyle = "#111827";
+    ctx.font = "700 15px Inter, sans-serif";
+
+    const valueToShow =
+      state.hovered !== -1 ? state.slices[state.hovered].value : state.total;
+    ctx.fillText(formatMoney(valueToShow), cx, cy + 10);
   }
 
-  function animate(duration = 700) {
+  function animate(duration = 800) {
     const start = performance.now();
     function step(t) {
       const p = Math.min(1, (t - start) / duration);
@@ -125,49 +148,101 @@
   }
 
   function computeSlices(portfolio) {
-    const items = portfolio
+    // Превращаем данные в удобный формат
+    let items = portfolio
       .map((p) => ({
         label: p.name || p.ticker || "—",
+        ticker: p.ticker,
         value: Number(p.value) || 0,
       }))
-      .filter((x) => x.value > 0);
+      .filter((x) => x.value > 0)
+      .sort((a, b) => b.value - a.value);
 
     state.total = items.reduce((s, i) => s + i.value, 0);
 
-    state.slices = items.map((it, i) => ({
-      ...it,
-      pct: state.total ? (it.value / state.total) * 100 : 0,
-      color: colorFor(i, items.length),
-    }));
+    // Логика группировки "Прочее"
+    const MAX_SLICES = 8; // Показываем 8 цветных, остальные в "Прочее"
+
+    if (items.length > MAX_SLICES) {
+      const topItems = items.slice(0, MAX_SLICES);
+      const otherItems = items.slice(MAX_SLICES);
+
+      const otherValue = otherItems.reduce((sum, it) => sum + it.value, 0);
+
+      // Добавляем "Прочее" в конец
+      topItems.push({
+        label: "Прочее",
+        ticker: `+${otherItems.length}`,
+        value: otherValue,
+        isOther: true, // Метка, чтобы покрасить в серый
+      });
+
+      items = topItems;
+    }
+
+    // Раздаем цвета
+    state.slices = items.map((it, i) => {
+      let color;
+      if (it.isOther) {
+        color = "#d1d5db"; // Светло-серый для "Прочее"
+      } else {
+        // Берем цвет из палитры по кругу
+        color = PALETTE[i % PALETTE.length];
+      }
+
+      return {
+        ...it,
+        pct: state.total ? (it.value / state.total) * 100 : 0,
+        color: color,
+      };
+    });
   }
 
   function renderLegend() {
     if (!legendEl) return;
     legendEl.innerHTML = "";
 
+    // Показываем всё, что есть в slices
     state.slices.forEach((s, i) => {
       const el = document.createElement("div");
       el.className = "pie-legend-item";
+
+      el.style.display = "flex";
+      el.style.justifyContent = "space-between";
+      el.style.alignItems = "center";
+      el.style.marginBottom = "8px";
+      el.style.cursor = "pointer";
+      el.style.padding = "6px 8px";
+      el.style.borderRadius = "6px";
+      el.style.transition = "background 0.2s";
+
+      // Если это "Прочее", делаем текст курсивом
+      const labelStyle = s.isOther
+        ? "font-style: italic; color: #666;"
+        : "color:#374151;";
+
       el.innerHTML = `
-        <span class="legend-swatch" style="background:${s.color}"></span>
-        <span class="legend-label">${s.label}</span>
-        <span class="legend-value">${s.pct.toFixed(1)}%</span>
-      `;
+                <div style="display:flex; align-items:center; gap:10px; min-width: 0;">
+                    <span style="background:${s.color}; width:10px; height:10px; border-radius:50%; flex-shrink: 0;"></span>
+                    <span style="font-size:13px; ${labelStyle} white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${s.label}
+                    </span>
+                </div>
+                <span style="font-weight:600; font-size:13px; margin-left: 10px; color:#111827;">
+                    ${s.pct.toFixed(1)}%
+                </span>
+            `;
 
       el.addEventListener("mouseenter", () => {
         state.hovered = i;
+        el.style.background = "#f3f4f6";
         render(state.animation);
       });
 
       el.addEventListener("mouseleave", () => {
         state.hovered = -1;
+        el.style.background = "transparent";
         render(state.animation);
-      });
-
-      el.addEventListener("click", () => {
-        state.solo = state.solo === i ? -1 : i;
-        animate(450);
-        renderLegend();
       });
 
       legendEl.appendChild(el);
@@ -178,26 +253,63 @@
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
-    const a = Math.atan2(y, x);
+    let angle = Math.atan2(y, x);
 
-    let angle = a < -Math.PI / 2 ? a + Math.PI * 2 : a;
-    let start = -Math.PI / 2;
+    angle += Math.PI / 2;
+    if (angle < 0) angle += Math.PI * 2;
 
-    state.hovered = -1;
+    let start = 0;
+    let found = -1;
+
     for (let i = 0; i < state.slices.length; i++) {
-      const slice = (state.slices[i].value / state.total) * Math.PI * 2;
-      if (angle >= start && angle < start + slice) {
-        state.hovered = i;
+      const sliceAngle = (state.slices[i].value / state.total) * Math.PI * 2;
+      if (angle >= start && angle < start + sliceAngle) {
+        found = i;
         break;
       }
-      start += slice;
+      start += sliceAngle;
     }
 
-    render(state.animation);
+    const w = rect.width;
+    const h = rect.height;
+    const radius = Math.min(w, h) / 2 - 20;
+    const dist = Math.sqrt(x * x + y * y);
+
+    if (dist < radius - 20 || dist > radius + 20) {
+      found = -1;
+    }
+
+    if (state.hovered !== found) {
+      state.hovered = found;
+      render(state.animation);
+    }
+
+    const t = ensureTooltip();
+    if (found !== -1) {
+      const s = state.slices[found];
+      const title = s.label;
+      // Если это "Прочее", не показываем тикер
+      const tickerText =
+        s.ticker && !s.isOther
+          ? `<span style="opacity:0.6; font-size:11px"> ${s.ticker}</span>`
+          : "";
+
+      t.innerHTML = `
+                <div style="font-weight:600; margin-bottom:2px">${title}${tickerText}</div>
+                <div>${formatMoney(s.value)} <span style="opacity:0.7">(${s.pct.toFixed(1)}%)</span></div>
+            `;
+      t.style.display = "block";
+      t.style.left = e.clientX + 12 + "px";
+      t.style.top = e.clientY + 12 + "px";
+    } else {
+      t.style.display = "none";
+    }
   });
 
   canvas.addEventListener("mouseleave", () => {
     state.hovered = -1;
+    const t = ensureTooltip();
+    t.style.display = "none";
     render(state.animation);
   });
 

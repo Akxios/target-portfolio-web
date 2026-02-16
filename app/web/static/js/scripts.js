@@ -77,22 +77,7 @@ function renderStats() {
 
 function createRowNode(item) {
   const tpl = document.getElementById("row-template");
-  if (!tpl) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="col-asset"><strong>${item.name ?? item.ticker ?? "—"}</strong>
-        <span class="asset-type hint">${item.ticker ?? ""} · ${item.type === "share" ? "Акция" : "Облигация"}</span>
-      </td>
-      <td class="col-num">${formatCurrency(Number(item.price))}</td>
-      <td class="col-num">${item.current_qty ?? 0}</td>
-      <td class="col-num">${item.target_qty ?? 0}</td>
-      <td class="col-num strong">${formatCurrency(Number(item.value))}</td>
-      <td class="col-progress">
-        <div class="progress" aria-valuenow="0"><div class="bar" style="width:0%"></div></div>
-      </td>
-    `;
-    return tr;
-  }
+  if (!tpl) return document.createElement("tr"); // Fallback
 
   const clone = tpl.content.cloneNode(true);
   const tr = clone.querySelector("tr");
@@ -102,7 +87,9 @@ function createRowNode(item) {
 
   const assetMeta = clone.querySelector(".asset-type");
   if (assetMeta)
-    assetMeta.textContent = `${item.ticker ?? "—"} · ${item.type === "share" ? "Акция" : "Облигация"}`;
+    assetMeta.textContent = `${item.ticker ?? "—"} · ${
+      item.type === "share" ? "Акция" : "Облигация"
+    }`;
 
   const cols = clone.querySelectorAll("td");
 
@@ -131,21 +118,9 @@ function renderTable() {
   const tbody = $("portfolio-body");
   if (!tbody) return;
 
-  const q = $("search-input")?.value?.trim()?.toLowerCase() ?? "";
-  const filter = $("filter-type")?.value ?? "all";
+  const q = "";
 
-  let items = portfolio.filter((it) => {
-    if (filter !== "all" && it.type !== filter) return false;
-    if (
-      q &&
-      !(
-        (it.ticker ?? "").toLowerCase().includes(q) ||
-        (it.name ?? "").toLowerCase().includes(q)
-      )
-    )
-      return false;
-    return true;
-  });
+  let items = portfolio;
 
   items.sort((a, b) => {
     const av = a[sortKey] ?? "";
@@ -203,6 +178,8 @@ function openAddModal() {
   const root = $("add-root");
   if (!root) return;
   root.style.display = "flex";
+  // Фокус на поле поиска при открытии
+  setTimeout(() => $("asset-search-input")?.focus(), 100);
 }
 
 function closeAddModal() {
@@ -210,14 +187,20 @@ function closeAddModal() {
   if (!root) return;
   root.style.display = "none";
 
-  const typeBtns = document.querySelectorAll("#add-type-switch .type-btn");
+  // Сброс полей
+  const typeBtns = document.querySelectorAll(
+    "#add-type-switch .asset-type-btn",
+  );
   typeBtns.forEach((b) => b.classList.remove("active"));
   if (typeBtns[0]) typeBtns[0].classList.add("active");
 
   if ($("add-type")) $("add-type").value = "share";
   if ($("add-ticker")) $("add-ticker").value = "";
-  if ($("add-current")) $("add-current").value = "";
-  if ($("add-target")) $("add-target").value = "";
+  if ($("asset-search-input")) $("asset-search-input").value = "";
+  if ($("asset-search-results"))
+    $("asset-search-results").style.display = "none";
+  if ($("add-current")) $("add-current").value = "0";
+  if ($("add-target")) $("add-target").value = "0";
 }
 
 const assetSearchInput = $("asset-search-input");
@@ -226,7 +209,7 @@ const assetSearchResults = $("asset-search-results");
 function getSelectedAssetType() {
   return (
     document.querySelector(".asset-type-btn.active")?.dataset.type ||
-    document.querySelector("#add-type")?.value ||
+    $("add-type")?.value ||
     "share"
   );
 }
@@ -241,7 +224,9 @@ async function searchAssetsGlobal(q) {
   try {
     const type = getSelectedAssetType();
     const resp = await fetch(
-      `/api/moex/search?ticker=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}`,
+      `/api/moex/search?ticker=${encodeURIComponent(
+        q,
+      )}&type=${encodeURIComponent(type)}`,
     );
     if (!resp.ok) {
       assetSearchResults.style.display = "none";
@@ -277,16 +262,27 @@ function renderAssetResults(items) {
     div.innerHTML = `
       <div class="ticker">${ticker}</div>
       <div class="name">${name}</div>
-      <div class="price">${it.price ? formatCurrency(Number(it.price)) : "—"}</div>
+      <div class="price">${
+        it.price ? formatCurrency(Number(it.price)) : "—"
+      }</div>
     `;
 
     div.addEventListener("click", () => {
-      openAddModal();
+      // Заполняем скрытый input тикером
       if ($("add-ticker")) $("add-ticker").value = ticker;
+      // Показываем тикер в поле поиска для наглядности
+      if ($("asset-search-input")) $("asset-search-input").value = ticker;
+
       if ($("add-type")) $("add-type").value = type;
-      document.querySelectorAll("#add-type-switch .type-btn").forEach((b) => {
-        b.classList.toggle("active", b.dataset.type === type);
-      });
+
+      // Обновляем визуальные кнопки
+      document
+        .querySelectorAll("#add-type-switch .asset-type-btn")
+        .forEach((b) => {
+          const isActive = b.dataset.type === type;
+          b.classList.toggle("active", isActive);
+        });
+
       assetSearchResults.style.display = "none";
     });
 
@@ -301,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.pieChart?.init();
   window.addEventListener("resize", () => window.pieChart?.resize());
 
+  // Сортировка таблицы
   document.querySelectorAll("th[data-key]").forEach((th) => {
     th.addEventListener("click", () => {
       const key = th.dataset.key;
@@ -317,11 +314,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  $("search-input")?.addEventListener("input", () => renderTable());
-  $("filter-type")?.addEventListener("change", () => renderTable());
-
-  $("add-btn")?.addEventListener("click", openAddModal);
+  // Обработчик кнопки "+ Добавить"
+  $("open-add-modal")?.addEventListener("click", openAddModal);
   $("close-add")?.addEventListener("click", closeAddModal);
+
+  // Закрытие по клику на фон
   $("add-root")?.addEventListener("click", (e) => {
     if (e.target === $("add-root")) closeAddModal();
   });
@@ -331,35 +328,39 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === $("modal-root")) closeEditModal();
   });
 
-  document.querySelectorAll("#add-type-switch .type-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll("#add-type-switch .type-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      if ($("add-type")) $("add-type").value = btn.dataset.type;
-    });
-  });
+  // Переключение типов (Акция/Облигация) в модалке добавления
+  document
+    .querySelectorAll("#add-type-switch .asset-type-btn")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document
+          .querySelectorAll("#add-type-switch .asset-type-btn")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        if ($("add-type")) $("add-type").value = btn.dataset.type;
 
-  document.querySelectorAll(".asset-type-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll(".asset-type-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      const q = assetSearchInput?.value.trim() ?? "";
-      if (q.length >= 2) searchAssetsGlobal(q);
+        // Если в поле поиска что-то есть, повторяем поиск с новым типом
+        const q = assetSearchInput?.value.trim() ?? "";
+        if (q.length >= 2) searchAssetsGlobal(q);
+      });
     });
-  });
 
+  // Живой поиск
   if (assetSearchInput)
     assetSearchInput.addEventListener(
       "input",
       debounce((e) => searchAssetsGlobal(e.target.value)),
     );
 
+  // ОТПРАВКА ФОРМЫ ДОБАВЛЕНИЯ
   $("submit-add")?.addEventListener("click", async () => {
-    const ticker = $("add-ticker")?.value.trim();
+    let ticker = $("add-ticker")?.value.trim();
+    const manualInput = $("asset-search-input")?.value.trim().toUpperCase();
+
+    if (!ticker && manualInput) {
+      ticker = manualInput;
+    }
+
     const type = $("add-type")?.value;
     const current_qty = Number($("add-current")?.value || 0);
     const target_qty = Number($("add-target")?.value || 0);
@@ -384,6 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Сохранение редактирования
   $("save-edit")?.addEventListener("click", async () => {
     if (!selectedItem) return;
     const ticker = selectedItem.ticker;
@@ -391,11 +393,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const target_qty = Number($("edit-target")?.value || 0);
     try {
       await fetchJSON(
-        `/api/portfolio/assets/${encodeURIComponent(ticker)}/current?current_qty=${current_qty}`,
+        `/api/portfolio/assets/${encodeURIComponent(
+          ticker,
+        )}/current?current_qty=${current_qty}`,
         { method: "PATCH" },
       );
       await fetchJSON(
-        `/api/portfolio/assets/${encodeURIComponent(ticker)}/target?target_qty=${target_qty}`,
+        `/api/portfolio/assets/${encodeURIComponent(
+          ticker,
+        )}/target?target_qty=${target_qty}`,
         { method: "PATCH" },
       );
       toast("Сохранено");
@@ -407,6 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Удаление
   $("delete-edit")?.addEventListener("click", async () => {
     if (!selectedItem) return;
     if (!confirm(`Удалить ${selectedItem.ticker}?`)) return;
@@ -425,6 +432,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   $("refresh-btn")?.addEventListener("click", fetchPortfolio);
+
+  // Экспорт
   $("bulk-export")?.addEventListener("click", () => {
     if (!portfolio || portfolio.length === 0) {
       toast("Нет данных для экспорта");
