@@ -6,8 +6,8 @@ from pymoex.models.enums import InstrumentType
 
 
 class PortfolioItem(BaseModel):
-    ticker: str = Field(examples=["SBER"])
-    name: str = Field(examples=["Сбербанк"])
+    ticker: str = Field(description="Тикер актива", examples=["SBER"])
+    name: str = Field(description="Название актива", examples=["Сбербанк"])
     type: InstrumentType
 
     price: Decimal | None = Field(
@@ -19,8 +19,8 @@ class PortfolioItem(BaseModel):
         description="Время обновления котировки",
     )
 
-    current_qty: int = Field(..., ge=0)
-    target_qty: int = Field(..., ge=0)
+    current_qty: int = Field(..., ge=0, description="Текущее значение актива")
+    target_qty: int = Field(..., ge=0, description="Цель значения актива")
 
     value: Decimal | None = Field(
         None,
