@@ -8,34 +8,34 @@ from app.models.share import MoexShareOut
 moex_url = settings.MOEX_BASE_URL
 
 
-async def get_moex_share(ticker: str) -> MoexShareOut:
-    async with MoexClient() as client:
-        share = await client.share(ticker)
+async def get_moex_share(client: MoexClient, ticker: str) -> MoexShareOut:
 
-        return MoexShareOut(
-            ticker=share.sec_id,
-            short_name=share.short_name,
-            name=share.name,
-            price=share.last_price,
-        )
+    share = await client.share(ticker)
 
-
-async def get_moex_bond(ticker: str) -> MoexBondOut:
-    async with MoexClient() as client:
-        bond = await client.bond(ticker)
-
-        return MoexBondOut(
-            ticker=bond.sec_id,
-            name=bond.name or bond.short_name,
-            short_name=bond.short_name,
-            price=bond.last_price,
-            effective_yield=bond.effective_yield,
-            coupon_value=bond.coupon_value,
-        )
+    return MoexShareOut(
+        ticker=share.sec_id,
+        short_name=share.short_name,
+        name=share.name,
+        price=share.last_price,
+    )
 
 
-async def search_moex_instruments(ticker: str, type: InstrumentType):
-    async with MoexClient() as client:
-        result = await client.find(ticker, type)
+async def get_moex_bond(client: MoexClient, ticker: str) -> MoexBondOut:
+    bond = await client.bond(ticker)
 
-        return result
+    return MoexBondOut(
+        ticker=bond.sec_id,
+        name=bond.name or bond.short_name,
+        short_name=bond.short_name,
+        price=bond.last_price,
+        effective_yield=bond.effective_yield,
+        coupon_value=bond.coupon_value,
+    )
+
+
+async def search_moex_instruments(
+    client: MoexClient, ticker: str, type: InstrumentType
+):
+    result = await client.find(ticker, type)
+
+    return result

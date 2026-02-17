@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from pymoex import MoexClient
 from pymoex.models.enums import InstrumentType
 from starlette import status
 
+from app.api.deps import get_moex_client
 from app.exceptions import AssetNotFoundError, InvalidQuantityError
 from app.models.portfolio_item import PortfolioItem
 from app.models.position import Position, PositionCreate
@@ -18,19 +20,21 @@ router = APIRouter(prefix="/portfolio", tags=["Portfolio"])
 
 
 @router.get("", response_model=list[PortfolioItem])
-async def api_get_portfolio():
-    return await build_portfolio()
+async def api_get_portfolio(client: MoexClient = Depends(get_moex_client)):
+    return await build_portfolio(client)
 
 
 @router.post("/positions", status_code=status.HTTP_201_CREATED, response_model=Position)
-async def api_add_position(payload: PositionCreate):
+async def api_add_position(
+    payload: PositionCreate, client: MoexClient = Depends(get_moex_client)
+):
     ticker = payload.ticker.upper()
 
     # 1. Загружаем данные (SDK)
     if payload.type == InstrumentType.SHARE:
-        instrument = await get_moex_share(ticker)
+        instrument = await get_moex_share(client, ticker)
     elif payload.type == InstrumentType.BOND:
-        instrument = await get_moex_bond(ticker)
+        instrument = await get_moex_bond(client, ticker)
     else:
         raise HTTPException(400, "Invalid instrument type")
 

@@ -1,7 +1,8 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
+from pymoex import MoexClient
 from pymoex.models.enums import InstrumentType
 
 from app.core.constants import MOEX_MAX_CONCURRENCY
@@ -13,13 +14,13 @@ from app.services.portfolio import progress_percent, remaining_qty
 _SEMAPHORE = asyncio.Semaphore(MOEX_MAX_CONCURRENCY)
 
 
-async def _load_quote(position):
+async def _load_quote(client: MoexClient, position):
     async with _SEMAPHORE:
         try:
             if position.type == InstrumentType.SHARE:
-                quote = await get_moex_share(position.ticker)
+                quote = await get_moex_share(client, position.ticker)
             elif position.type == InstrumentType.BOND:
-                quote = await get_moex_bond(position.ticker)
+                quote = await get_moex_bond(client, position.ticker)
             else:
                 return position, None
 
@@ -29,12 +30,12 @@ async def _load_quote(position):
             return position, None
 
 
-async def build_portfolio() -> list[PortfolioItem]:
+async def build_portfolio(client: MoexClient) -> list[PortfolioItem]:
     positions = await list_positions()
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
-    tasks = [_load_quote(p) for p in positions]
+    tasks = [_load_quote(client, p) for p in positions]
     results = await asyncio.gather(*tasks)
 
     portfolio: list[PortfolioItem] = []
