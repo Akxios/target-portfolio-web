@@ -1,64 +1,57 @@
-from app.core.constants import PORTFOLIO_COLLECTION
-from app.core.database import get_db
+# app/repositories/portfolio.py
+
+from typing import List
+
 from app.models.position import Position
 
-COLLECTION = PORTFOLIO_COLLECTION
+
+async def get_all_positions() -> List[Position]:
+    """Получить все позиции из базы"""
+    return await Position.find_all().to_list()
 
 
-async def list_positions() -> list[Position]:
-    db = get_db()
-    cursor = db[COLLECTION].find({})
+async def upsert_position(position_data: Position) -> None:
+    """Обновить или создать позицию"""
+    # Ищем по тикеру
+    existing = await Position.find_one(Position.ticker == position_data.ticker)
 
-    positions = []
-    async for doc in cursor:
-        doc.pop("_id", None)
-        positions.append(Position(**doc))
-
-    return positions
-
-
-async def upsert_position(position: Position) -> None:
-    db = get_db()
-    await db[COLLECTION].update_one(
-        {"ticker": position.ticker},
-        {
-            "$set": {
-                "name": position.name,
-                "short_name": position.short_name,
-                "type": position.type,
-                "target_qty": position.target_qty,
-                "current_qty": position.current_qty,
-            }
-        },
-        upsert=True,
-    )
+    if existing:
+        # Обновляем поля, если нашли
+        existing.current_qty = position_data.current_qty
+        existing.target_qty = position_data.target_qty
+        existing.name = position_data.name
+        existing.short_name = position_data.short_name
+        existing.type = position_data.type
+        await existing.save()
+    else:
+        # Создаем новую
+        await position_data.create()
 
 
-async def set_current_qty(ticker: str, qty: int) -> None:
-    db = get_db()
-    result = await db[COLLECTION].update_one(
-        {"ticker": ticker.upper()},
-        {"$set": {"current_qty": qty}},
-    )
+async def set_target_qty(ticker: str, target_qty: int) -> None:
+    """Установить целевое количество"""
+    position = await Position.find_one(Position.ticker == ticker)
+    if not position:
+        raise ValueError(f"Position {ticker} not found")
 
-    if result.matched_count == 0:
-        raise ValueError("Позиция не найдена")
+    position.target_qty = target_qty
+    await position.save()
 
 
-async def set_target_qty(ticker: str, qty: int) -> None:
-    db = get_db()
-    result = await db[COLLECTION].update_one(
-        {"ticker": ticker.upper()},
-        {"$set": {"target_qty": qty}},
-    )
+async def set_current_qty(ticker: str, current_qty: int) -> None:
+    """Установить текущее количество"""
+    position = await Position.find_one(Position.ticker == ticker)
+    if not position:
+        raise ValueError(f"Position {ticker} not found")
 
-    if result.matched_count == 0:
-        raise ValueError("Позиция не найдена")
+    position.current_qty = current_qty
+    await position.save()
 
 
 async def remove_position(ticker: str) -> None:
-    db = get_db()
-    result = await db[COLLECTION].delete_one({"ticker": ticker.upper()})
+    """Удалить позицию"""
+    position = await Position.find_one(Position.ticker == ticker)
+    if not position:
+        raise ValueError(f"Position {ticker} not found")
 
-    if result.deleted_count == 0:
-        raise ValueError("Позиция не найдена")
+    await position.delete()

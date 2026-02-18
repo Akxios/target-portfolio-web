@@ -1,25 +1,32 @@
 from contextlib import asynccontextmanager
 
+from beanie import init_beanie
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymoex.exceptions import InstrumentNotFoundError
 from starlette.responses import JSONResponse
 
 from app.api.moex import router as api_moex_router
 from app.api.portfolio import router as api_portfolio_router
 from app.core.config import settings
-from app.core.database import close_mongo_connection, connect_to_mongo
+from app.models.position import Position
 from app.web.router import router as web_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    await connect_to_mongo()
+
+    client = AsyncIOMotorClient(settings.MONGODB_URL)
+    await init_beanie(
+        database=client[settings.MONGODB_DB_NAME],  # type: ignore
+        document_models=[Position],
+    )
     yield
+
     # Shutdown
-    await close_mongo_connection()
+    client.close()
 
 
 app = FastAPI(title="Target Portfolio API", lifespan=lifespan)

@@ -7,7 +7,7 @@ from pymoex.models.enums import InstrumentType
 
 from app.core.constants import MOEX_MAX_CONCURRENCY
 from app.models.portfolio_item import PortfolioItem
-from app.repositories.portfolio import list_positions
+from app.repositories.portfolio import get_all_positions
 from app.services.moex import get_moex_bond, get_moex_share
 from app.services.portfolio import progress_percent, remaining_qty
 
@@ -31,7 +31,7 @@ async def _load_quote(client: MoexClient, position):
 
 
 async def build_portfolio(client: MoexClient) -> list[PortfolioItem]:
-    positions = await list_positions()
+    positions = await get_all_positions()
 
     now = datetime.now(timezone.utc)
 
