@@ -10,12 +10,12 @@ from app.repositories.portfolio import (
 )
 
 
-def remaining_qty(position: Position) -> int:
+async def remaining_qty(position: Position) -> int:
     """Сколько акций осталось докупить"""
     return max(position.target_qty - position.current_qty, 0)
 
 
-def progress_percent(position: Position) -> Decimal:
+async def progress_percent(position: Position) -> Decimal:
     """Процент выполнения цели"""
     if position.target_qty == 0:
         return Decimal("0.00")
@@ -25,7 +25,7 @@ def progress_percent(position: Position) -> Decimal:
     return percent.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
 
-def is_target_reached(position: Position) -> bool:
+async def is_target_reached(position: Position) -> bool:
     """Достигнута ли цель"""
     return position.current_qty >= position.target_qty
 

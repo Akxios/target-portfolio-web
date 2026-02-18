@@ -52,8 +52,8 @@ async def build_portfolio(client: MoexClient) -> list[PortfolioItem]:
             current_qty=position.current_qty,
             target_qty=position.target_qty,
             value=round(position.current_qty * price, 2) if price else None,
-            progress_percent=progress_percent(position),
-            remaining_qty=remaining_qty(position),
+            progress_percent=await progress_percent(position),
+            remaining_qty=await remaining_qty(position),
         )
 
         portfolio.append(item)
