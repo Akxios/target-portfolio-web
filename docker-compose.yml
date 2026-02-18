@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    container_name: target-portfolio-app
+    ports:
+      - "8000:8000"
+    environment:
+      # Переопределяем настройки для работы внутри сети Docker
+      - MONGODB_URL=mongodb://mongo:27017
+      - MONGODB_DB_NAME=portfolio_db
+    depends_on:
+      - mongo
+    restart: always
+
+  # База данных MongoDB
+  mongo:
+    image: mongo:8.0
+    container_name: target-portfolio-mongo
+    restart: always
+    volumes:
+      - mongo_data:/data/db
+    # Если нужно прокинуть порт базы наружу (для подключения через Compass):
+    ports:
+      - "27018:27018"
+
+volumes:
+  mongo_data:
