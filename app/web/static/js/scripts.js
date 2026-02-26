@@ -39,17 +39,24 @@ let portfolio = [];
 let selectedItem = null;
 let sortKey = "ticker";
 let sortDir = 1;
+let currentView = "all"; // Новая переменная: all | share | bond
+
+// --- ЛОГИКА ФИЛЬТРАЦИИ ---
+const getVisiblePortfolio = () =>
+  currentView === "all"
+    ? portfolio
+    : portfolio.filter((p) => p.type === currentView);
 
 // --- РЕНДЕР СТАТИСТИКИ ---
 function renderStats() {
-  const totalValue = portfolio.reduce((s, i) => s + (Number(i.value) || 0), 0);
-  const totalTarget = portfolio.reduce(
+  const items = getVisiblePortfolio(); // Считаем только то, что видно!
+  const totalValue = items.reduce((s, i) => s + (Number(i.value) || 0), 0);
+  const totalTarget = items.reduce(
     (s, i) => s + (Number(i.target_qty) || 0) * (Number(i.price) || 0),
     0,
   );
-  const avgPrice = portfolio.length
-    ? portfolio.reduce((s, i) => s + (Number(i.price) || 0), 0) /
-      portfolio.length
+  const avgPrice = items.length
+    ? items.reduce((s, i) => s + (Number(i.price) || 0), 0) / items.length
     : 0;
   const achieved =
     totalTarget > 0 ? Math.round((totalValue / totalTarget) * 100) : 0;
@@ -57,7 +64,7 @@ function renderStats() {
   $("total-value").textContent = formatCurrency(totalValue);
   $("achieved-value").textContent = `${achieved} %`;
   $("average-price").textContent = formatCurrency(Math.round(avgPrice));
-  $("total-count").textContent = portfolio.length;
+  $("total-count").textContent = items.length;
 }
 
 // --- РЕНДЕР ТАБЛИЦЫ ПОРТФЕЛЯ ---
@@ -103,7 +110,8 @@ function renderTable() {
   const tbody = $("portfolio-body");
   if (!tbody) return;
 
-  const sorted = [...portfolio].sort((a, b) => {
+  const items = getVisiblePortfolio(); // Рисуем только то, что видно!
+  const sorted = [...items].sort((a, b) => {
     const av = a[sortKey] ?? "",
       bv = b[sortKey] ?? "";
     if (!isNaN(av) && !isNaN(bv)) return (av - bv) * sortDir;
@@ -114,13 +122,18 @@ function renderTable() {
   tbody.append(...sorted.map(createRowNode));
 }
 
+// Общая функция отрисовки всего
+function render() {
+  renderStats();
+  renderTable();
+  window.pieChart?.update(getVisiblePortfolio()); // График тоже фильтруем!
+}
+
 // --- ЗАГРУЗКА ПОРТФЕЛЯ ---
 async function fetchPortfolio() {
   try {
     portfolio = (await fetchJSON("/api/portfolio")) || [];
-    renderStats();
-    renderTable();
-    window.pieChart?.update(portfolio);
+    render();
   } catch (e) {
     toast("Не удалось загрузить портфель");
   }
@@ -225,6 +238,18 @@ document.addEventListener("DOMContentLoaded", () => {
   window.pieChart?.init();
   window.addEventListener("resize", () => window.pieChart?.resize());
 
+  // === ОБРАБОТКА НОВЫХ КНОПОК ФИЛЬТРАЦИИ ===
+  document.querySelectorAll(".filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document
+        .querySelectorAll(".filter-btn")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentView = btn.dataset.filter;
+      render(); // Моментально перерисовываем всё под новый фильтр!
+    });
+  });
+
   // Сортировка таблицы
   document.querySelectorAll("th[data-key]").forEach((th) => {
     th.addEventListener("click", () => {
@@ -258,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("modal-root").onclick = (e) =>
     e.target === $("modal-root") && ($("modal-root").style.display = "none");
 
-  // Переключение типов активов (Акция/Облигация)
+  // Переключение типов активов (Акция/Облигация) при поиске
   document
     .querySelectorAll("#add-type-switch .asset-type-btn")
     .forEach((btn) => {
@@ -353,10 +378,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ЭКСПОРТ CSV
   $("bulk-export").onclick = () => {
-    if (!portfolio.length) return toast("Нет данных");
+    const items = getVisiblePortfolio(); // Экспортируем только то, что на экране!
+    if (!items.length) return toast("Нет данных");
     const csv = [
       "ticker,type,price,current_qty,target_qty,value",
-      ...portfolio.map(
+      ...items.map(
         (p) =>
           `${p.ticker || ""},${p.type || ""},${Number(p.price) || 0},${p.current_qty || 0},${p.target_qty || 0},${Number(p.value) || 0}`,
       ),

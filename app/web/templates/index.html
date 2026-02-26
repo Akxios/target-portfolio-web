@@ -40,17 +40,49 @@
                 <div class="top-row">
                     <div class="left-column">
                         <section class="card">
-                            <div class="section-head">
-                                <div>
-                                    <h3>Портфель</h3>
-                                    <p class="hint">
-                                        Текущие позиции и целевые значения
-                                    </p>
+                            <div
+                                class="section-head"
+                                style="flex-direction: column; gap: 16px"
+                            >
+                                <div
+                                    style="
+                                        display: flex;
+                                        justify-content: space-between;
+                                        width: 100%;
+                                        align-items: flex-start;
+                                    "
+                                >
+                                    <div>
+                                        <h3>Портфель</h3>
+                                        <p class="hint">
+                                            Текущие позиции и целевые значения
+                                        </p>
+                                    </div>
+                                    <div class="portfolio-meta">
+                                        <span class="hint">Позиций:</span>
+                                        <strong id="total-count">—</strong>
+                                    </div>
                                 </div>
 
-                                <div class="portfolio-meta">
-                                    <span class="hint">Позиций:</span>
-                                    <strong id="total-count">—</strong>
+                                <div class="portfolio-filters">
+                                    <button
+                                        class="filter-btn active"
+                                        data-filter="all"
+                                    >
+                                        Все активы
+                                    </button>
+                                    <button
+                                        class="filter-btn"
+                                        data-filter="share"
+                                    >
+                                        Акции
+                                    </button>
+                                    <button
+                                        class="filter-btn"
+                                        data-filter="bond"
+                                    >
+                                        Облигации
+                                    </button>
                                 </div>
                             </div>
 
