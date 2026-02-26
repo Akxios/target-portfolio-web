@@ -1,3 +1,1 @@
-soon
-
-start docker - docker-compose up --build
+скоро здесь будет документация
