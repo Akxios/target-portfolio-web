@@ -7,6 +7,7 @@ from app.api.deps import get_moex_client
 from app.exceptions import AssetNotFoundError, InvalidQuantityError
 from app.models.portfolio_item import PortfolioItem
 from app.models.position import Position, PositionCreate
+from app.models.transaction import Transaction
 from app.services.moex import get_moex_bond, get_moex_share
 from app.services.portfolio import (
     add_position_service,
@@ -30,7 +31,7 @@ async def api_add_position(
 ):
     ticker = payload.ticker.upper()
 
-    # 1. Загружаем данные (SDK)
+    # Загружаем данные
     if payload.type == InstrumentType.SHARE:
         instrument = await get_moex_share(client, ticker)
     elif payload.type == InstrumentType.BOND:
@@ -41,23 +42,22 @@ async def api_add_position(
     if not instrument:
         raise HTTPException(404, "Instrument not found on MOEX")
 
-    # 2. Создаем позицию (Logic)
-    # Используем instrument.short_name как страховку, если полного имени нет
+    # Создаем позицию
     safe_name = instrument.name or instrument.short_name
 
     position = Position(
         ticker=ticker,
-        name=safe_name,  # Гарантированно строка
+        name=safe_name,
         short_name=instrument.short_name,
         type=payload.type,
         target_qty=payload.target_qty,
         current_qty=payload.current_qty,
     )
 
-    # 3. Сохраняем (Service)
+    # Сохраняем
     await add_position_service(position)
 
-    # 4. Возвращаем объект (FastAPI сам сделает JSON)
+    # Возвращаем объект
     return position
 
 
@@ -101,3 +101,11 @@ async def api_remove_position(ticker: str):
         }
     except AssetNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/history", summary="Получить историю операций")
+async def get_portfolio_history():
+    """Возвращает лог транзакций, отсортированный от новых к старым"""
+
+    history = await Transaction.find_all().sort("-timestamp").limit(50).to_list()
+    return history

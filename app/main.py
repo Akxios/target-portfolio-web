@@ -12,6 +12,7 @@ from app.api.moex import router as api_moex_router
 from app.api.portfolio import router as api_portfolio_router
 from app.core.config import settings
 from app.models.position import Position
+from app.models.transaction import Transaction
 from app.web.router import router as web_router
 
 
@@ -21,7 +22,7 @@ async def lifespan(app: FastAPI):
     client = AsyncIOMotorClient(settings.MONGODB_URL)
     await init_beanie(
         database=client[settings.MONGODB_DB_NAME],  # type: ignore
-        document_models=[Position],
+        document_models=[Position, Transaction],
     )
     yield
 

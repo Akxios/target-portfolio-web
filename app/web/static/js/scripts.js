@@ -77,7 +77,7 @@ function renderStats() {
 
 function createRowNode(item) {
   const tpl = document.getElementById("row-template");
-  if (!tpl) return document.createElement("tr"); // Fallback
+  if (!tpl) return document.createElement("tr");
 
   const clone = tpl.content.cloneNode(true);
   const tr = clone.querySelector("tr");
@@ -118,8 +118,6 @@ function renderTable() {
   const tbody = $("portfolio-body");
   if (!tbody) return;
 
-  const q = "";
-
   let items = portfolio;
 
   items.sort((a, b) => {
@@ -156,6 +154,77 @@ async function fetchPortfolio() {
   }
 }
 
+// === ФУНКЦИЯ ЗАГРУЗКИ ИСТОРИИ ===
+async function loadHistory() {
+  const tbody = document.getElementById("history-body");
+  if (!tbody) return;
+
+  try {
+    const res = await fetch("/api/portfolio/history");
+    if (!res.ok) throw new Error("Ошибка загрузки истории");
+    const history = await res.json();
+
+    tbody.innerHTML = "";
+
+    if (history.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="4" style="text-align: center; color: var(--muted);">История пуста</td></tr>';
+      return;
+    }
+
+    history.forEach((tx) => {
+      const tr = document.createElement("tr");
+
+      // Форматируем дату
+      const d = new Date(tx.timestamp);
+      const dateStr =
+        d.toLocaleDateString("ru-RU", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "2-digit",
+        }) +
+        " " +
+        d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+      // Переводим действия на русский и подбираем цвет
+      let actionText = tx.action;
+      let actionClass = "action-info";
+
+      switch (tx.action) {
+        case "ADD_POSITION":
+          actionText = "Добавлен актив";
+          actionClass = "action-success";
+          break;
+        case "REMOVE_POSITION":
+          actionText = "Удален актив";
+          actionClass = "action-danger";
+          break;
+        case "UPDATE_CURRENT_QTY":
+          actionText = "Сделка (покупка/продажа)";
+          actionClass = "action-info";
+          break;
+        case "UPDATE_TARGET_QTY":
+          actionText = "Изменение цели";
+          actionClass = "action-warning";
+          break;
+      }
+
+      tr.innerHTML = `
+        <td class="hint">${dateStr}</td>
+        <td><span class="ticker-pill">${tx.ticker}</span></td>
+        <td><span class="action-badge ${actionClass}">${actionText}</span></td>
+        <td class="col-num strong">${tx.previous_qty} → ${tx.new_qty}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML =
+      '<tr><td colspan="4" style="text-align: center; color: var(--danger);">Не удалось загрузить историю</td></tr>';
+  }
+}
+// ==================================
+
 function openEditModal(item) {
   selectedItem = item;
   const root = $("modal-root");
@@ -178,7 +247,6 @@ function openAddModal() {
   const root = $("add-root");
   if (!root) return;
   root.style.display = "flex";
-  // Фокус на поле поиска при открытии
   setTimeout(() => $("asset-search-input")?.focus(), 100);
 }
 
@@ -187,7 +255,6 @@ function closeAddModal() {
   if (!root) return;
   root.style.display = "none";
 
-  // Сброс полей
   const typeBtns = document.querySelectorAll(
     "#add-type-switch .asset-type-btn",
   );
@@ -224,9 +291,7 @@ async function searchAssetsGlobal(q) {
   try {
     const type = getSelectedAssetType();
     const resp = await fetch(
-      `/api/moex/search?ticker=${encodeURIComponent(
-        q,
-      )}&type=${encodeURIComponent(type)}`,
+      `/api/moex/search?ticker=${encodeURIComponent(q)}&type=${encodeURIComponent(type)}`,
     );
     if (!resp.ok) {
       assetSearchResults.style.display = "none";
@@ -268,14 +333,10 @@ function renderAssetResults(items) {
     `;
 
     div.addEventListener("click", () => {
-      // Заполняем скрытый input тикером
       if ($("add-ticker")) $("add-ticker").value = ticker;
-      // Показываем тикер в поле поиска для наглядности
       if ($("asset-search-input")) $("asset-search-input").value = ticker;
-
       if ($("add-type")) $("add-type").value = type;
 
-      // Обновляем визуальные кнопки
       document
         .querySelectorAll("#add-type-switch .asset-type-btn")
         .forEach((b) => {
@@ -297,7 +358,6 @@ document.addEventListener("DOMContentLoaded", () => {
   window.pieChart?.init();
   window.addEventListener("resize", () => window.pieChart?.resize());
 
-  // Сортировка таблицы
   document.querySelectorAll("th[data-key]").forEach((th) => {
     th.addEventListener("click", () => {
       const key = th.dataset.key;
@@ -311,14 +371,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       th.classList.add(sortDir === 1 ? "sorted-asc" : "sorted-desc");
       renderTable();
+      loadHistory();
     });
   });
 
-  // Обработчик кнопки "+ Добавить"
   $("open-add-modal")?.addEventListener("click", openAddModal);
   $("close-add")?.addEventListener("click", closeAddModal);
 
-  // Закрытие по клику на фон
   $("add-root")?.addEventListener("click", (e) => {
     if (e.target === $("add-root")) closeAddModal();
   });
@@ -328,7 +387,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === $("modal-root")) closeEditModal();
   });
 
-  // Переключение типов (Акция/Облигация) в модалке добавления
   document
     .querySelectorAll("#add-type-switch .asset-type-btn")
     .forEach((btn) => {
@@ -339,20 +397,18 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.classList.add("active");
         if ($("add-type")) $("add-type").value = btn.dataset.type;
 
-        // Если в поле поиска что-то есть, повторяем поиск с новым типом
         const q = assetSearchInput?.value.trim() ?? "";
         if (q.length >= 2) searchAssetsGlobal(q);
       });
     });
 
-  // Живой поиск
   if (assetSearchInput)
     assetSearchInput.addEventListener(
       "input",
       debounce((e) => searchAssetsGlobal(e.target.value)),
     );
 
-  // ОТПРАВКА ФОРМЫ ДОБАВЛЕНИЯ
+  // === ОТПРАВКА ФОРМЫ ДОБАВЛЕНИЯ ===
   $("submit-add")?.addEventListener("click", async () => {
     let ticker = $("add-ticker")?.value.trim();
     const manualInput = $("asset-search-input")?.value.trim().toUpperCase();
@@ -379,13 +435,14 @@ document.addEventListener("DOMContentLoaded", () => {
       toast("Актив добавлен");
       closeAddModal();
       await fetchPortfolio();
+      await loadHistory();
     } catch (e) {
       console.error(e);
       toast(e.message || "Ошибка при добавлении актива");
     }
   });
 
-  // Сохранение редактирования
+  // === СОХРАНЕНИЕ РЕДАКТИРОВАНИЯ ===
   $("save-edit")?.addEventListener("click", async () => {
     if (!selectedItem) return;
     const ticker = selectedItem.ticker;
@@ -393,27 +450,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const target_qty = Number($("edit-target")?.value || 0);
     try {
       await fetchJSON(
-        `/api/portfolio/assets/${encodeURIComponent(
-          ticker,
-        )}/current?current_qty=${current_qty}`,
+        `/api/portfolio/assets/${encodeURIComponent(ticker)}/current?current_qty=${current_qty}`,
         { method: "PATCH" },
       );
       await fetchJSON(
-        `/api/portfolio/assets/${encodeURIComponent(
-          ticker,
-        )}/target?target_qty=${target_qty}`,
+        `/api/portfolio/assets/${encodeURIComponent(ticker)}/target?target_qty=${target_qty}`,
         { method: "PATCH" },
       );
       toast("Сохранено");
       closeEditModal();
       await fetchPortfolio();
+      await loadHistory();
     } catch (e) {
       console.error(e);
       toast("Ошибка при сохранении");
     }
   });
 
-  // Удаление
+  // === УДАЛЕНИЕ ===
   $("delete-edit")?.addEventListener("click", async () => {
     if (!selectedItem) return;
     if (!confirm(`Удалить ${selectedItem.ticker}?`)) return;
@@ -425,15 +479,25 @@ document.addEventListener("DOMContentLoaded", () => {
       toast("Удалено");
       closeEditModal();
       await fetchPortfolio();
+      await loadHistory();
     } catch (e) {
       console.error(e);
       toast("Ошибка при удалении");
     }
   });
 
-  $("refresh-btn")?.addEventListener("click", fetchPortfolio);
+  // === КНОПКИ ОБНОВЛЕНИЯ ===
+  $("refresh-btn")?.addEventListener("click", () => {
+    fetchPortfolio();
+    loadHistory();
+  });
 
-  // Экспорт
+  const refreshHistoryBtn = $("refresh-history-btn");
+  if (refreshHistoryBtn) {
+    refreshHistoryBtn.addEventListener("click", loadHistory);
+  }
+
+  // === ЭКСПОРТ ===
   $("bulk-export")?.addEventListener("click", () => {
     if (!portfolio || portfolio.length === 0) {
       toast("Нет данных для экспорта");
@@ -470,5 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
     toast("CSV скачан");
   });
 
+  // === ПЕРВИЧНАЯ ЗАГРУЗКА ПРИ СТАРТЕ ===
   fetchPortfolio();
+  loadHistory();
 });
