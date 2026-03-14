@@ -1,4 +1,5 @@
 const $ = (id) => document.getElementById(id);
+const num = (v) => Number(v) || 0; // Хелпер для чисел
 
 const toast = (msg, time = 2200) => {
   const t = $("toast");
@@ -29,19 +30,33 @@ async function fetchJSON(url, opts = {}) {
   return res.status === 204 ? null : res.json().catch(() => null);
 }
 
+// Обертка для всех CRUD-операций с API
+async function executeApi(requestPromise, successMsg, closeElementId = null) {
+  try {
+    await requestPromise;
+    toast(successMsg);
+    if (closeElementId) $(closeElementId).style.display = "none";
+    refreshAll();
+  } catch (e) {
+    toast(e.message || "Ошибка");
+  }
+}
+
 const formatCurrency = (v) =>
   typeof v !== "number" || isNaN(v)
     ? "—"
     : v.toLocaleString("ru-RU", { maximumFractionDigits: 2 }) + " ₽";
+const dtf = new Intl.DateTimeFormat("ru-RU", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
 
 // --- СОСТОЯНИЕ ---
-let portfolio = [];
-let selectedItem = null;
-let sortKey = "ticker";
-let sortDir = 1;
-let currentView = "all"; // Новая переменная: all | share | bond
-
-// --- ЛОГИКА ФИЛЬТРАЦИИ ---
+let portfolio = [],
+  selectedItem = null,
+  sortKey = "ticker",
+  sortDir = 1,
+  currentView = "all";
 const getVisiblePortfolio = () =>
   currentView === "all"
     ? portfolio
@@ -49,20 +64,21 @@ const getVisiblePortfolio = () =>
 
 // --- РЕНДЕР СТАТИСТИКИ ---
 function renderStats() {
-  const items = getVisiblePortfolio(); // Считаем только то, что видно!
-  const totalValue = items.reduce((s, i) => s + (Number(i.value) || 0), 0);
+  const items = getVisiblePortfolio();
+  const totalValue = items.reduce((s, i) => s + num(i.value), 0);
   const totalTarget = items.reduce(
-    (s, i) => s + (Number(i.target_qty) || 0) * (Number(i.price) || 0),
+    (s, i) => s + num(i.target_qty) * num(i.price),
     0,
   );
   const avgPrice = items.length
-    ? items.reduce((s, i) => s + (Number(i.price) || 0), 0) / items.length
+    ? items.reduce((s, i) => s + num(i.price), 0) / items.length
     : 0;
-  const achieved =
-    totalTarget > 0 ? Math.round((totalValue / totalTarget) * 100) : 0;
 
   $("total-value").textContent = formatCurrency(totalValue);
-  $("achieved-value").textContent = `${achieved} %`;
+  $("achieved-value").textContent =
+    totalTarget > 0
+      ? `${Math.round((totalValue / totalTarget) * 100)} %`
+      : "0 %";
   $("average-price").textContent = formatCurrency(Math.round(avgPrice));
   $("total-count").textContent = items.length;
 }
@@ -80,66 +96,63 @@ function createRowNode(item) {
     `${item.ticker || "—"} · ${item.type === "share" ? "Акция" : "Облигация"}`;
 
   if (cols.length >= 6) {
-    cols[1].textContent = formatCurrency(Number(item.price));
+    cols[1].textContent = formatCurrency(num(item.price));
     cols[2].textContent = item.current_qty || 0;
     cols[3].textContent = item.target_qty || 0;
-    cols[4].textContent = formatCurrency(Number(item.value));
+    cols[4].textContent = formatCurrency(num(item.value));
 
     const progress =
       item.target_qty > 0
         ? Math.min((item.current_qty / item.target_qty) * 100, 100)
         : 0;
-    cols[5].querySelector(".bar").style.width = `${Math.round(progress)}%`;
-    cols[5].querySelector(".progress-percent").textContent =
-      `${Math.round(progress)}%`;
+    cols[5].querySelector(".bar").style.width = cols[5].querySelector(
+      ".progress-percent",
+    ).textContent = `${Math.round(progress)}%`;
   }
 
-  tr.addEventListener("click", () => {
+  tr.onclick = () => {
     selectedItem = item;
     $("edit-ticker").value = item.ticker || "";
     $("edit-type").value = item.type || "share";
     $("edit-current").value = item.current_qty || 0;
     $("edit-target").value = item.target_qty || 0;
     $("modal-root").style.display = "flex";
-  });
-
+  };
   return tr;
 }
 
 function renderTable() {
   const tbody = $("portfolio-body");
   if (!tbody) return;
-
-  const items = getVisiblePortfolio(); // Рисуем только то, что видно!
-  const sorted = [...items].sort((a, b) => {
+  const sorted = [...getVisiblePortfolio()].sort((a, b) => {
     const av = a[sortKey] ?? "",
       bv = b[sortKey] ?? "";
-    if (!isNaN(av) && !isNaN(bv)) return (av - bv) * sortDir;
-    return String(av).localeCompare(String(bv)) * sortDir;
+    return (
+      (!isNaN(av) && !isNaN(bv)
+        ? av - bv
+        : String(av).localeCompare(String(bv))) * sortDir
+    );
   });
-
   tbody.innerHTML = "";
   tbody.append(...sorted.map(createRowNode));
 }
 
-// Общая функция отрисовки всего
 function render() {
   renderStats();
   renderTable();
-  window.pieChart?.update(getVisiblePortfolio()); // График тоже фильтруем!
+  window.pieChart?.update(getVisiblePortfolio());
 }
 
-// --- ЗАГРУЗКА ПОРТФЕЛЯ ---
+// --- ЗАГРУЗКА ДАННЫХ ---
 async function fetchPortfolio() {
   try {
     portfolio = (await fetchJSON("/api/portfolio")) || [];
     render();
-  } catch (e) {
+  } catch {
     toast("Не удалось загрузить портфель");
   }
 }
 
-// --- ЗАГРУЗКА ИСТОРИИ ---
 const ACTION_MAP = {
   ADD_POSITION: { text: "Добавлен актив", cls: "action-success" },
   REMOVE_POSITION: { text: "Удален актив", cls: "action-danger" },
@@ -150,39 +163,35 @@ const ACTION_MAP = {
 async function loadHistory() {
   const tbody = $("history-body");
   if (!tbody) return;
-
   try {
     const history = (await fetchJSON("/api/portfolio/history")) || [];
-
-    if (!history.length) {
-      tbody.innerHTML =
-        '<tr><td colspan="4" style="text-align:center;color:var(--muted);">История пуста</td></tr>';
-      return;
-    }
+    if (!history.length)
+      return (tbody.innerHTML =
+        '<tr><td colspan="4" style="text-align:center;color:var(--muted);">История пуста</td></tr>');
 
     tbody.innerHTML = history
       .map((tx) => {
-        const d = new Date(tx.timestamp);
-        const dateStr = `${d.toLocaleDateString("ru-RU")} ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
         const action = ACTION_MAP[tx.action] || {
           text: tx.action,
           cls: "action-info",
         };
-
-        return `
-        <tr>
-          <td class="hint">${dateStr}</td>
-          <td><span class="ticker-pill">${tx.ticker}</span></td>
-          <td><span class="action-badge ${action.cls}">${action.text}</span></td>
-          <td class="col-num strong">${tx.previous_qty} → ${tx.new_qty}</td>
-        </tr>
-      `;
+        return `<tr>
+        <td class="hint">${dtf.format(new Date(tx.timestamp))}</td>
+        <td><span class="ticker-pill">${tx.ticker}</span></td>
+        <td><span class="action-badge ${action.cls}">${action.text}</span></td>
+        <td class="col-num strong">${tx.previous_qty} → ${tx.new_qty}</td>
+      </tr>`;
       })
       .join("");
-  } catch (e) {
+  } catch {
     tbody.innerHTML =
       '<tr><td colspan="4" style="text-align:center;color:var(--danger);">Ошибка загрузки</td></tr>';
   }
+}
+
+function refreshAll() {
+  fetchPortfolio();
+  loadHistory();
 }
 
 // --- ПОИСК И АКТИВЫ ---
@@ -197,35 +206,20 @@ async function searchAssetsGlobal(q) {
     const items = await fetchJSON(
       `/api/moex/search?ticker=${encodeURIComponent(q)}&type=${getSelectedAssetType()}`,
     );
-    resultsBox.innerHTML = "";
-
     if (!items?.length) {
       resultsBox.innerHTML = `<div style="padding:10px;color:var(--muted)">Ничего не найдено</div>`;
     } else {
-      items.forEach((it) => {
-        const div = document.createElement("div");
-        div.className = "asset-search-item";
-        div.innerHTML = `
+      resultsBox.innerHTML = items
+        .map(
+          (it) => `
+        <div class="asset-search-item" data-ticker="${it.ticker || it.secid}" data-type="${it.type || getSelectedAssetType()}">
           <div class="ticker">${it.ticker || it.secid || "—"}</div>
           <div class="name">${it.name || it.shortname || "—"}</div>
-          <div class="price">${it.price ? formatCurrency(Number(it.price)) : "—"}</div>
-        `;
-        div.onclick = () => {
-          $("add-ticker").value = $("asset-search-input").value =
-            it.ticker || it.secid;
-          $("add-type").value = it.type || getSelectedAssetType();
-          document
-            .querySelectorAll("#add-type-switch .asset-type-btn")
-            .forEach((b) =>
-              b.classList.toggle(
-                "active",
-                b.dataset.type === $("add-type").value,
-              ),
-            );
-          resultsBox.style.display = "none";
-        };
-        resultsBox.appendChild(div);
-      });
+          <div class="price">${it.price ? formatCurrency(num(it.price)) : "—"}</div>
+        </div>
+      `,
+        )
+        .join("");
     }
     resultsBox.style.display = "block";
   } catch {
@@ -238,21 +232,33 @@ document.addEventListener("DOMContentLoaded", () => {
   window.pieChart?.init();
   window.addEventListener("resize", () => window.pieChart?.resize());
 
-  // === ОБРАБОТКА НОВЫХ КНОПОК ФИЛЬТРАЦИИ ===
+  // Делегирование событий для поиска (вместо цикла onclick)
+  $("asset-search-results").addEventListener("click", (e) => {
+    const item = e.target.closest(".asset-search-item");
+    if (!item) return;
+    $("add-ticker").value = $("asset-search-input").value = item.dataset.ticker;
+    $("add-type").value = item.dataset.type;
+    document
+      .querySelectorAll("#add-type-switch .asset-type-btn")
+      .forEach((b) =>
+        b.classList.toggle("active", b.dataset.type === item.dataset.type),
+      );
+    $("asset-search-results").style.display = "none";
+  });
+
   document.querySelectorAll(".filter-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.onclick = () => {
       document
         .querySelectorAll(".filter-btn")
         .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       currentView = btn.dataset.filter;
-      render(); // Моментально перерисовываем всё под новый фильтр!
-    });
+      render();
+    };
   });
 
-  // Сортировка таблицы
   document.querySelectorAll("th[data-key]").forEach((th) => {
-    th.addEventListener("click", () => {
+    th.onclick = () => {
       document
         .querySelectorAll("th[data-key]")
         .forEach((h) => h.classList.remove("sorted-asc", "sorted-desc"));
@@ -260,10 +266,10 @@ document.addEventListener("DOMContentLoaded", () => {
       sortKey = th.dataset.key;
       th.classList.add(sortDir === 1 ? "sorted-asc" : "sorted-desc");
       renderTable();
-    });
+    };
   });
 
-  // Модалка добавления
+  // Модалки
   const closeAdd = () => {
     $("add-root").style.display = "none";
     $("add-ticker").value = $("asset-search-input").value = "";
@@ -277,13 +283,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   $("close-add").onclick = closeAdd;
   $("add-root").onclick = (e) => e.target === $("add-root") && closeAdd();
-
-  // Модалка редактирования
   $("close-edit").onclick = () => ($("modal-root").style.display = "none");
   $("modal-root").onclick = (e) =>
     e.target === $("modal-root") && ($("modal-root").style.display = "none");
 
-  // Переключение типов активов (Акция/Облигация) при поиске
   document
     .querySelectorAll("#add-type-switch .asset-type-btn")
     .forEach((btn) => {
@@ -298,103 +301,82 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     });
 
-  // Поиск
   $("asset-search-input").oninput = debounce((e) =>
     searchAssetsGlobal(e.target.value),
   );
 
-  // ДОБАВИТЬ
-  $("submit-add").onclick = async () => {
+  // CRUD ОПЕРАЦИИ (Существенно сокращены за счет executeApi)
+  $("submit-add").onclick = () => {
     const ticker =
       $("add-ticker").value.trim() ||
       $("asset-search-input").value.trim().toUpperCase();
     if (!ticker) return toast("Введите тикер");
 
-    try {
-      await fetchJSON("/api/portfolio/positions", {
+    executeApi(
+      fetchJSON("/api/portfolio/positions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ticker,
           type: $("add-type").value,
-          current_qty: Number($("add-current").value),
-          target_qty: Number($("add-target").value),
+          current_qty: num($("add-current").value),
+          target_qty: num($("add-target").value),
         }),
-      });
-      toast("Актив добавлен");
-      closeAdd();
-      await fetchPortfolio();
-      await loadHistory();
-    } catch (e) {
-      toast(e.message || "Ошибка");
-    }
+      }),
+      "Актив добавлен",
+      "add-root",
+    );
   };
 
-  // СОХРАНИТЬ (РЕДАКТИРОВАНИЕ)
-  $("save-edit").onclick = async () => {
+  $("save-edit").onclick = () => {
     if (!selectedItem) return;
-    try {
-      await fetchJSON(
-        `/api/portfolio/assets/${encodeURIComponent(selectedItem.ticker)}/current?current_qty=${Number($("edit-current").value)}`,
-        { method: "PATCH" },
-      );
-      await fetchJSON(
-        `/api/portfolio/assets/${encodeURIComponent(selectedItem.ticker)}/target?target_qty=${Number($("edit-target").value)}`,
-        { method: "PATCH" },
-      );
-      toast("Сохранено");
-      $("modal-root").style.display = "none";
-      await fetchPortfolio();
-      await loadHistory();
-    } catch {
-      toast("Ошибка при сохранении");
-    }
+    executeApi(
+      Promise.all([
+        fetchJSON(
+          `/api/portfolio/assets/${encodeURIComponent(selectedItem.ticker)}/current?current_qty=${num($("edit-current").value)}`,
+          { method: "PATCH" },
+        ),
+        fetchJSON(
+          `/api/portfolio/assets/${encodeURIComponent(selectedItem.ticker)}/target?target_qty=${num($("edit-target").value)}`,
+          { method: "PATCH" },
+        ),
+      ]),
+      "Сохранено",
+      "modal-root",
+    );
   };
 
-  // УДАЛИТЬ
-  $("delete-edit").onclick = async () => {
+  $("delete-edit").onclick = () => {
     if (!selectedItem || !confirm(`Удалить ${selectedItem.ticker}?`)) return;
-    try {
-      await fetchJSON(
+    executeApi(
+      fetchJSON(
         `/api/portfolio/assets/${encodeURIComponent(selectedItem.ticker)}`,
         { method: "DELETE" },
-      );
-      toast("Удалено");
-      $("modal-root").style.display = "none";
-      await fetchPortfolio();
-      await loadHistory();
-    } catch {
-      toast("Ошибка при удалении");
-    }
+      ),
+      "Удалено",
+      "modal-root",
+    );
   };
 
-  // ОБНОВЛЕНИЕ
-  const refreshAll = () => {
-    fetchPortfolio();
-    loadHistory();
-  };
   $("refresh-btn").onclick = refreshAll;
   if ($("refresh-history-btn")) $("refresh-history-btn").onclick = loadHistory;
 
-  // ЭКСПОРТ CSV
   $("bulk-export").onclick = () => {
-    const items = getVisiblePortfolio(); // Экспортируем только то, что на экране!
+    const items = getVisiblePortfolio();
     if (!items.length) return toast("Нет данных");
     const csv = [
       "ticker,type,price,current_qty,target_qty,value",
       ...items.map(
         (p) =>
-          `${p.ticker || ""},${p.type || ""},${Number(p.price) || 0},${p.current_qty || 0},${p.target_qty || 0},${Number(p.value) || 0}`,
+          `${p.ticker || ""},${p.type || ""},${num(p.price)},${p.current_qty || 0},${p.target_qty || 0},${num(p.value)}`,
       ),
     ].join("\n");
-
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    a.download = "portfolio.csv";
-    a.click();
+    Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(new Blob([csv], { type: "text/csv" })),
+      download: "portfolio.csv",
+    }).click();
     toast("CSV скачан");
   };
 
-  // ПЕРВЫЙ ЗАПУСК
   refreshAll();
 });
