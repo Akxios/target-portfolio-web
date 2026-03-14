@@ -29,36 +29,83 @@ body {
     font-family: "Inter", system-ui, sans-serif;
 }
 
+/* === УТИЛИТЫ === */
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+.items-start {
+    align-items: flex-start;
+}
+.gap-16 {
+    gap: 16px;
+}
+.w-full {
+    width: 100%;
+}
+.text-right {
+    text-align: right;
+}
+.relative {
+    position: relative;
+}
+.m-0 {
+    margin: 0;
+}
+.mb-10 {
+    margin-bottom: 10px;
+}
+.w-140 {
+    width: 140px;
+}
+.w-120 {
+    width: 120px;
+}
+.w-100 {
+    width: 100px;
+}
+
+/* === БАЗОВЫЕ БЛОКИ === */
 .container {
     max-width: 1280px;
     margin: 0 auto;
     padding: 32px 20px 64px;
 }
 
-/* Шапка */
 .app-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 24px;
     gap: 16px;
-}
-.brand h1 {
-    font-size: 24px;
-    margin: 0;
-}
-.lead {
-    margin-top: 4px;
-    color: var(--muted);
-    font-size: 14px;
+
+    & .brand h1 {
+        font-size: 24px;
+        margin: 0;
+    }
+    & .lead {
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 14px;
+    }
 }
 
-/* Сетка интерфейса */
+.controls {
+    display: flex;
+    gap: 10px;
+}
+
 .top-row {
     display: grid;
     grid-template-columns: 1fr 300px;
     gap: 24px;
 }
+
 .left-column,
 .right-column {
     display: flex;
@@ -66,7 +113,6 @@ body {
     gap: 20px;
 }
 
-/* Карточки */
 .card {
     background: #fff;
     border-radius: var(--radius);
@@ -74,6 +120,7 @@ body {
     padding: 20px;
     box-shadow: var(--shadow);
 }
+
 .section-head {
     display: flex;
     align-items: flex-start;
@@ -81,7 +128,7 @@ body {
     margin-bottom: 16px;
 }
 
-/* Кнопки */
+/* === КНОПКИ === */
 .btn {
     border: none;
     padding: 8px 14px;
@@ -91,45 +138,64 @@ body {
     cursor: pointer;
     background: var(--primary-grad);
     color: #fff;
-    transition: opacity 0.2s;
-}
-.btn:hover {
-    opacity: 0.9;
-}
-.btn:active {
-    transform: scale(0.98);
-}
-.btn.ghost {
-    background: transparent;
-    color: var(--primary);
-    border: 1px solid var(--border);
-}
-.btn.secondary {
-    background: var(--primary-soft);
-    color: var(--primary-2);
-}
-.btn.full {
-    width: 100%;
-}
-.btn.add-small {
-    padding: 6px 10px;
-    font-size: 12px;
+    transition:
+        opacity 0.2s,
+        transform 0.1s;
+
+    &:hover {
+        opacity: 0.9;
+    }
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &.ghost {
+        background: transparent;
+        color: var(--primary);
+        border: 1px solid var(--border);
+    }
+    &.secondary {
+        background: var(--primary-soft);
+        color: var(--primary-2);
+    }
+    &.full {
+        width: 100%;
+    }
+    &.add-small {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
 }
 
-/* Формы и инпуты */
+/* === ФОРМЫ === */
 .field {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-bottom: 12px;
+
+    & label,
+    & .hint {
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+    & input,
+    & select {
+        width: 100%;
+        padding: 10px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+
+        &:focus {
+            border-color: var(--primary);
+        }
+    }
 }
-.field label,
-.hint {
-    font-size: 13px;
-    color: var(--muted);
-}
-.field input,
-.field select,
+
 .asset-search-input input {
     width: 100%;
     padding: 10px;
@@ -137,15 +203,11 @@ body {
     border: 1px solid var(--border);
     font-size: 14px;
     outline: none;
-    transition: border-color 0.2s;
-}
-.field input:focus,
-.field select:focus,
-.asset-search-input input:focus {
-    border-color: var(--primary);
+    &:focus {
+        border-color: var(--primary);
+    }
 }
 
-/* Переключатель Акция/Облигация */
 .asset-search-type {
     display: inline-flex;
     background: var(--primary-soft);
@@ -153,6 +215,7 @@ body {
     padding: 4px;
     gap: 4px;
 }
+
 .asset-type-btn {
     background: transparent;
     border: none;
@@ -162,13 +225,13 @@ body {
     cursor: pointer;
     color: var(--primary);
     font-size: 13px;
-}
-.asset-type-btn.active {
-    background: var(--primary-grad);
-    color: #fff;
+
+    &.active {
+        background: var(--primary-grad);
+        color: #fff;
+    }
 }
 
-/* Результаты поиска */
 .asset-search-results {
     margin-top: 4px;
     border-radius: var(--radius-sm);
@@ -178,7 +241,13 @@ body {
     padding: 4px;
     background: #fff;
     display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10;
 }
+
 .asset-search-item {
     display: flex;
     align-items: center;
@@ -186,82 +255,86 @@ body {
     padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
-}
-.asset-search-item:hover {
-    background: var(--primary-soft);
-}
-.asset-search-item .ticker {
-    font-weight: 700;
-    color: var(--primary);
-    font-size: 12px;
-    width: 60px;
-}
-.asset-search-item .name {
-    flex: 1;
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin: 0 10px;
-}
-.asset-search-item .price {
-    font-weight: 600;
-    font-size: 13px;
+
+    &:hover {
+        background: var(--primary-soft);
+    }
+    & .ticker {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 12px;
+        width: 60px;
+    }
+    & .name {
+        flex: 1;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0 10px;
+    }
+    & .price {
+        font-weight: 600;
+        font-size: 13px;
+    }
 }
 
-/* Сводка портфеля (Статистика) */
+/* === СТАТИСТИКА И ТАБЛИЦЫ === */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 16px;
 }
+
 .stat {
     background: var(--primary-soft);
     border-radius: var(--radius-sm);
     padding: 12px;
-}
-.stat h3 {
-    font-size: 12px;
-    color: var(--muted);
-    margin: 0 0 4px 0;
-}
-.stat p {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0;
-    color: var(--text);
+
+    & h3 {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 4px 0;
+    }
+    & p {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text);
+    }
 }
 
-/* Таблица портфеля и истории */
 .table-wrap {
     overflow-x: auto;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
 }
+
 .portfolio-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
     min-width: 600px;
     text-align: left;
-}
-.portfolio-table th,
-.portfolio-table td {
-    padding: 12px;
-    border-bottom: 1px solid var(--border);
-}
-.portfolio-table th {
-    color: var(--muted);
-    font-weight: 600;
-    background: #fdfdfd;
-    cursor: pointer;
-}
-.portfolio-table tbody tr {
-    background: #fff;
-}
-.portfolio-table tbody tr:hover {
-    background: #f8fafc;
+
+    & th,
+    & td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+    & th {
+        color: var(--muted);
+        font-weight: 600;
+        background: #fdfdfd;
+        cursor: pointer;
+    }
+    & tbody tr {
+        background: #fff;
+    }
+    & tbody tr:hover {
+        background: #f8fafc;
+    }
 }
 
 .col-asset {
@@ -272,6 +345,7 @@ body {
     font-weight: 700;
     font-size: 14px;
 }
+
 .ticker-pill {
     font-weight: 600;
     font-size: 11px;
@@ -283,34 +357,35 @@ body {
 
 .col-num {
     text-align: right;
-}
-.col-num.strong {
-    font-weight: 700;
+    &.strong {
+        font-weight: 700;
+    }
 }
 .col-progress {
     width: 160px;
     text-align: right;
 }
 
-/* Прогресс-бар */
 .progress {
     height: 6px;
     background: #e2e8f0;
     border-radius: 999px;
     overflow: hidden;
+
+    & .bar {
+        height: 100%;
+        background: var(--primary-grad);
+        transition: width 0.3s;
+    }
 }
-.progress .bar {
-    height: 100%;
-    background: var(--primary-grad);
-    transition: width 0.3s;
-}
+
 .progress-percent {
     font-size: 11px;
     color: var(--muted);
     margin-top: 4px;
 }
 
-/* Модалки и Уведомления */
+/* === МОДАЛКИ И УВЕДОМЛЕНИЯ === */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -320,6 +395,7 @@ body {
     justify-content: center;
     z-index: 100;
 }
+
 .modal {
     background: #fff;
     border-radius: var(--radius);
@@ -328,6 +404,7 @@ body {
     max-width: 400px;
     box-shadow: var(--shadow);
 }
+
 .modal-actions {
     display: flex;
     justify-content: flex-end;
@@ -346,11 +423,13 @@ body {
     display: none;
     z-index: 200;
     font-size: 13px;
+
+    &.show {
+        display: block;
+        animation: fadeIn 0.2s;
+    }
 }
-.toast.show {
-    display: block;
-    animation: fadeIn 0.2s;
-}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -362,7 +441,7 @@ body {
     }
 }
 
-/* График (Pie Chart) */
+/* === ГРАФИК === */
 .pie-wrap {
     display: flex;
     flex-direction: column;
@@ -373,6 +452,7 @@ body {
     max-width: 220px;
     height: auto !important;
 }
+
 .pie-legend {
     display: flex;
     flex-direction: column;
@@ -382,6 +462,7 @@ body {
     width: 100%;
     margin-top: 16px;
 }
+
 .pie-legend-item {
     display: flex;
     align-items: center;
@@ -405,26 +486,15 @@ body {
     font-weight: 700;
     color: var(--text);
 }
-.pie-tooltip {
-    position: fixed;
-    pointer-events: none;
-    background: #fff;
-    border-radius: 6px;
-    padding: 6px 10px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    font-size: 12px;
-    z-index: 999;
-    transform: translate(-50%, -120%);
-}
 
-/* Бейджи истории */
+/* === БЕЙДЖИ === */
 .action-badge {
     font-size: 11px;
     font-weight: 600;
     padding: 4px 8px;
     border-radius: 6px;
 }
+
 .action-success {
     background: rgba(16, 185, 129, 0.1);
     color: var(--success);
@@ -442,7 +512,38 @@ body {
     color: #d97706;
 }
 
-/* Адаптивность */
+/* === ФИЛЬТРЫ === */
+.portfolio-filters {
+    display: flex;
+    gap: 4px;
+    background: var(--primary-soft);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    width: fit-content;
+}
+
+.filter-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        color: var(--text);
+    }
+    &.active {
+        background: #fff;
+        color: var(--primary);
+        box-shadow: var(--shadow);
+    }
+}
+
+/* === АДАПТИВНОСТЬ === */
 @media (max-width: 900px) {
     .top-row {
         grid-template-columns: 1fr;
@@ -458,6 +559,7 @@ body {
         min-width: 150px;
     }
 }
+
 @media (max-width: 600px) {
     .container {
         padding: 16px;
@@ -472,32 +574,4 @@ body {
     .pie-wrap {
         flex-direction: column;
     }
-}
-
-.portfolio-filters {
-    display: flex;
-    gap: 4px;
-    background: var(--primary-soft);
-    padding: 4px;
-    border-radius: var(--radius-sm);
-    width: fit-content;
-}
-.filter-btn {
-    background: transparent;
-    border: none;
-    padding: 6px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--muted);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.filter-btn:hover {
-    color: var(--text);
-}
-.filter-btn.active {
-    background: #fff;
-    color: var(--primary);
-    box-shadow: var(--shadow);
 }
