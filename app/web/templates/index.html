@@ -83,6 +83,18 @@
                                     >
                                         Облигации
                                     </button>
+                                    <button
+                                        class="filter-btn"
+                                        data-filter="fonds"
+                                    >
+                                        Фонды
+                                    </button>
+                                    <button
+                                        class="filter-btn"
+                                        data-filter="value"
+                                    >
+                                        Валюта
+                                    </button>
                                 </div>
                             </div>
 
@@ -225,6 +237,8 @@
                     <select id="edit-type" disabled>
                         <option value="share">Акция</option>
                         <option value="bond">Облигация</option>
+                        <option value="fonds">Фонды</option>
+                        <option value="value">Валюта</option>
                     </select>
                 </div>
                 <div class="field">
@@ -256,19 +270,17 @@
                 <div class="field">
                     <label>Тип актива</label>
                     <div id="add-type-switch" class="asset-search-type">
-                        <button
-                            type="button"
-                            class="asset-type-btn active"
-                            data-type="share"
-                        >
+                        <button class="asset-type-btn active" data-type="share">
                             Акция
                         </button>
-                        <button
-                            type="button"
-                            class="asset-type-btn"
-                            data-type="bond"
-                        >
+                        <button class="asset-type-btn" data-type="bond">
                             Облигация
+                        </button>
+                        <button class="asset-type-btn" data-filter="fonds">
+                            Фонды
+                        </button>
+                        <button class="asset-type-btn" data-filter="value">
+                            Валюта
                         </button>
                     </div>
                     <input type="hidden" id="asset-search-type" value="share" />
@@ -302,9 +314,7 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button id="submit-add" class="btn secondary">
-                        Добавить
-                    </button>
+                    <button id="submit-add" class="btn">Добавить</button>
                     <button id="close-add" class="btn ghost">Отмена</button>
                 </div>
             </div>
