@@ -16,7 +16,7 @@ async def get_moex_share(client: MoexClient, ticker: str) -> MoexShareOut:
         ticker=share.sec_id,
         short_name=share.short_name,
         name=share.name,
-        price=share.last_price,
+        price=share.prev_price,
     )
 
 
