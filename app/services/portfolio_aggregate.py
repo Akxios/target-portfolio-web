@@ -8,7 +8,12 @@ from pymoex.models.enums import InstrumentType
 from app.core.constants import MOEX_MAX_CONCURRENCY
 from app.models.portfolio_item import PortfolioItem
 from app.repositories.portfolio import get_all_positions
-from app.services.moex import get_moex_bond, get_moex_share
+from app.services.moex import (
+    get_moex_bond,
+    get_moex_currency,
+    get_moex_fund,
+    get_moex_share,
+)
 from app.services.portfolio import progress_percent, remaining_qty
 
 _SEMAPHORE = asyncio.Semaphore(MOEX_MAX_CONCURRENCY)
@@ -21,6 +26,10 @@ async def _load_quote(client: MoexClient, position):
                 quote = await get_moex_share(client, position.ticker)
             elif position.type == InstrumentType.BOND:
                 quote = await get_moex_bond(client, position.ticker)
+            elif position.type == InstrumentType.FUND:
+                quote = await get_moex_fund(client, position.ticker)
+            elif position.type == InstrumentType.CURRENCY:
+                quote = await get_moex_currency(client, position.ticker)
             else:
                 return position, None
 

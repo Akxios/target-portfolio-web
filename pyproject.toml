@@ -1,6 +1,6 @@
 [project]
 name = "target-portfolio"
-version = "0.1.0"
+version = "0.1.1"
 description = "Simple target-portfolio"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -13,7 +13,6 @@ dependencies = [
     "motor>=3.7.1",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",
-    "pymoex",
     "pymongo>=4.16.0",
     "python-multipart>=0.0.22",
     "uvicorn>=0.40.0",
