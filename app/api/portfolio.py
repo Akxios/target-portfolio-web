@@ -8,7 +8,12 @@ from app.exceptions import AssetNotFoundError, InvalidQuantityError
 from app.models.portfolio_item import PortfolioItem
 from app.models.position import Position, PositionCreate
 from app.models.transaction import Transaction
-from app.services.moex import get_moex_bond, get_moex_share
+from app.services.moex import (
+    get_moex_bond,
+    get_moex_currency,
+    get_moex_fund,
+    get_moex_share,
+)
 from app.services.portfolio import (
     add_position_service,
     remove_position_service,
@@ -36,6 +41,10 @@ async def api_add_position(
         instrument = await get_moex_share(client, ticker)
     elif payload.type == InstrumentType.BOND:
         instrument = await get_moex_bond(client, ticker)
+    elif payload.type == InstrumentType.FUND:
+        instrument = await get_moex_fund(client, ticker)
+    elif payload.type == InstrumentType.CURRENCY:
+        instrument = await get_moex_currency(client, ticker)
     else:
         raise HTTPException(400, "Invalid instrument type")
 

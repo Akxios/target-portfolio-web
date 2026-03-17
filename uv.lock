@@ -402,8 +402,8 @@ wheels = [
 
 [[package]]
 name = "pymoex"
-version = "0.1.5"
-source = { git = "https://github.com/Akxios/pymoex.git?rev=dev#31c071abb5f37c41d28a292f5a8cbf5a6973a856" }
+version = "0.1.6"
+source = { git = "https://github.com/Akxios/pymoex.git?rev=dev#b792ce6557bbc7aa97bbb490658a05342fa8c4dc" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
@@ -539,7 +539,7 @@ wheels = [
 
 [[package]]
 name = "target-portfolio"
-version = "0.1.0"
+version = "0.1.1"
 source = { virtual = "." }
 dependencies = [
     { name = "apscheduler" },

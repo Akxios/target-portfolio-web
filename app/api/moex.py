@@ -3,7 +3,23 @@ from pymoex import MoexClient
 from pymoex.models.enums import InstrumentType
 
 from app.api.deps import get_moex_client
-from app.services.moex import get_moex_bond, get_moex_share, search_moex_instruments
+from app.services.moex import (
+    get_moex_bond,
+    get_moex_currency,
+    get_moex_fund,
+    get_moex_share,
+    search_moex_instruments,
+)
+
+
+def map_type(t: InstrumentType) -> str:
+    return {
+        InstrumentType.SHARE: "share",
+        InstrumentType.BOND: "bond",
+        InstrumentType.FUND: "fund",
+        InstrumentType.CURRENCY: "currency",
+    }.get(t, "unknown")
+
 
 router = APIRouter(prefix="/moex", tags=["MOEX"])
 
@@ -16,13 +32,19 @@ async def api_get_instrument(
         return await get_moex_share(client, ticker)
     elif type == InstrumentType.BOND:
         return await get_moex_bond(client, ticker)
+    elif type == InstrumentType.FUND:
+        return await get_moex_fund(client, ticker)
+    elif type == InstrumentType.CURRENCY:
+        return await get_moex_currency(client, ticker)
 
     raise HTTPException(status_code=400, detail="Invalid instrument type")
 
 
 @router.get("/search")
 async def api_search_moex(
-    ticker: str, type: InstrumentType, client: MoexClient = Depends(get_moex_client)
+    ticker: str,
+    type: InstrumentType,
+    client: MoexClient = Depends(get_moex_client),
 ):
     items = await search_moex_instruments(client, ticker, type)
 
@@ -32,7 +54,7 @@ async def api_search_moex(
             "name": it.name,
             "short_name": it.short_name,
             "isin": it.isin,
-            "type": "share" if type == InstrumentType.SHARE else "bond",
+            "type": map_type(type),
         }
         for it in items
     ]
